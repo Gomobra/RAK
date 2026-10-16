@@ -61,7 +61,7 @@ def write_idx_labels(path, labels, *, gz=True, magic=MAGIC_LABELS):
 
 
 def write_truncated_images(path, n, rows, cols, missing, *, magic=MAGIC_IMAGES):
-    """File IDX gambar yang header-nya功课 tapi isinya kurang.
+    """File IDX gambar yang header-nya lengkap tapi isinya kurang.
 
     Ini yang terjadi kalau download putus di tengah: header lengkap,
     payload tidak. Simulasikan dengan menulis stream gzip yang berisi
@@ -77,7 +77,7 @@ def write_truncated_images(path, n, rows, cols, missing, *, magic=MAGIC_IMAGES):
 
 
 def write_truncated_labels(path, n, missing, *, magic=MAGIC_LABELS):
-    """File IDX label yang header-nya功课 tapi isinya kurang."""
+    """File IDX label yang header-nya lengkap tapi isinya kurang."""
     payload = struct.pack(">2I", magic, n)
     payload += bytes(i % 10 for i in range(n - missing))
     with gzip.open(path, "wb") as fh:
