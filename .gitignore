@@ -7,19 +7,23 @@ __pycache__/
 .ruff_cache/
 
 # Distribution / packaging
-build/
-dist/
+# Semua pola DIRETAMAK dengan garis miring depan. Tanpa itu `build/`
+# ikut cocok dengan `src/rak/build/` — persis seperti yang terjadi
+# dengan `data/` yang cocok dengan `src/rak/data/` diam-diam, dan
+# loader MNIST tidak pernah masuk repo.
+/build/
+/dist/
 *.egg-info/
-.eggs/
+*.eggs/
 
 # Environments
-.venv/
-venv/
+/.venv/
+/venv/
 env/
 
-# Data & checkpoints
-data/
-checkpoints/
+# Data & checkpoints - root only, JANGAN tanpa `/`
+/data/
+/checkpoints/
 *.pt
 *.pth
 *.ckpt
