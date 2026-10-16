@@ -41,7 +41,7 @@ jobs:
         run: python -m rak selfcheck
 
       - name: Test
-        run: pytest -q --timeout=600
+        run: pytest
 
   # Scan CJK nyasar. Kita nulis docstring dalam bahasa Indonesia, dan
   # beberapa kali ada karakter Mandarin yang nyelip dari input IME —

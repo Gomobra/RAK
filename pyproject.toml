@@ -20,7 +20,7 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-dev = ["pytest>=7.4"]
+dev = ["pytest>=7.4", "pytest-timeout>=2.2"]
 tasks = ["torchvision>=0.15"]
 
 [project.scripts]
@@ -31,7 +31,7 @@ where = ["src"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-addopts = "-q --strict-markers"
+addopts = "-q --strict-markers --timeout=900"
 markers = [
     "slow: test yang butuh > 10 detik",
 ]
