@@ -212,6 +212,21 @@ class CompetitiveNetwork:
             self.config.theta_init,
             device=self.device,
         )
+        # Trace STDP juga di-reset per presentasi.
+        #
+        # Alasannya dua. Pertama, bentuk: `x_pre` setelah satu batch
+        # punya dimensi batch, jadi tidak bisa di-`expand` ke batch
+        # berukuran berbeda di presentasi berikutnya — dan ukuran
+        # batch terakhir memang hampir selalu berbeda.
+        #
+        # Kedua, dan ini yang penting secara fisika: `tau_pre` = 20 ms
+        # sementara jeda antar presentasi 150 ms. Setelah jeda itu,
+        # `gamma_pre^300` di bawah 1e-16 — trace sudah hilang total.
+        # Melewatkan reset itu tidak mengubah apa pun, hanya menahan
+        # bentuk tensor yang salah.
+        self.stdp_state = make_eq3_state(
+            self.config.n_in, self.config.n_e, self.stdp_config
+        )
 
     # ------------------------------------------------------------------
     def present_batch(self, z_pre: Tensor) -> tuple[Tensor, Tensor]:

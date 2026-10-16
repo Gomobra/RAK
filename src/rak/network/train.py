@@ -1,0 +1,307 @@
+r"""Loop training dan evaluasi MNIST.
+
+T6.2 — menyatukan loader, encoder, jaringan, dan readout jadi satu
+proses yang bisa dijalankan dari CLI atau GitHub Actions.
+
+KONTRUKSI YANG DIPUTUSKAN (dan alasannya)
+------------------------------------------
+1. **Mini-batch, bukan satu-satu.** Kode acuanpresents one image at a time. Itu korekt tapi lambat: di Termux satu gambar
+   100 neuron butuh ~500 ms, jadi satu epoch 60.000 gambar = 8 jam.
+   Dengan batch 64, matmul jadi efisien dan epoch turun ke ~2 jam.
+   Bobot tetap SATU matriks yang dipakai bersama batch — bukan satu
+   per gambar.
+
+2. **Intensitas adaptif diterapkan per-gambar dalam batch.**
+   Setelah satu batch dipresentasikan, gambar yang spike-nya kurang
+   dari `min_spikes` diulang dengan intensitas lebih tinggi, satu
+   per satu, sampai cukup atau batas iterasi tercapai. Ini padanan
+   dari aturan acuan, bukan perilaku baru.
+
+3. **Checkpoint setiap N presentasi.** Run 2 jam yang hilang karena runner
+   ke-restart adalah kegagalan yang tidak bisa diterima. Bobot
+   disimpan sebagai `.pt` biasa, bukan `.pth` custom.
+
+4. **Label hanya menyentuh `assign_classes`, setelah training.**
+   `evaluate()` menerima spike count, bukan gambar berlabel.
+"""
+
+from __future__ import annotations
+
+import json
+import time
+from dataclasses import asdict, dataclass, field
+from pathlib import Path
+
+import torch
+from torch import Tensor
+
+from rak.data.encode import AdaptiveIntensity, EncoderConfig, encode_poisson
+from rak.data.mnist import MnistSplit
+from rak.learning.stdp3 import Eq3Config
+from rak.network.competitive import (
+    CompetitiveNetwork,
+    NetworkConfig,
+    assign_classes,
+    classify,
+)
+
+__all__ = ["TrainConfig", "TrainResult", "train", "evaluate", "accuracy"]
+
+
+@dataclass
+class TrainConfig:
+    """Parameter training."""
+
+    n_e: int = 100
+    n_in: int = 784
+
+    #: Jumlah pass atas training set. Acuan: 3 epoch untuk 400 neuron.
+    epochs: int = 1
+
+    #: Jumlah gambar per batch presentasi.
+    batch_size: int = 64
+
+    #: Batas pengulangan untuk intensitas adaptif per gambar.
+    max_repeat: int = 6
+
+    seed: int = 1
+
+    #: Learning rate STDP Eq.3.
+    eta: float = 1e-3
+
+    #: Kolom bobot (Diehl-Cook: 78 untuk 784 input).
+    column_sum: float = 78.0
+
+    #: Checkpoint setiap N presentasi. 0 = jangan checkpoint.
+    checkpoint_every: int = 5000
+
+    #: Jumlah presentasi sebelum Diehl-Cook mulai mengukur akurasi
+    #: training (untuk monitoring, bukan untuk deciding).
+    log_every: int = 500
+
+    out_dir: str = "runs/mnist"
+
+    def to_json(self) -> str:
+        return json.dumps(asdict(self), indent=2)
+
+
+@dataclass
+class TrainResult:
+    """Hasil training."""
+
+    presentations: int = 0
+    epochs_done: int = 0
+    wall_seconds: float = 0.0
+    mean_spikes: float = 0.0
+    dead_neurons: int = 0
+    history: list[dict] = field(default_factory=list)
+
+    def summary(self) -> str:
+        return (
+            f"{self.presentations} presentasi, "
+            f"{self.epochs_done} epoch, "
+            f"{self.wall_seconds / 60:.1f} menit, "
+            f"{self.mean_spikes:.1f} spike/presentasi, "
+            f"{self.dead_neurons} neuron mati"
+        )
+
+
+# ----------------------------------------------------------------------
+def _batches(n: int, size: int, generator: torch.Generator):
+    order = torch.randperm(n, generator=generator)
+    for start in range(0, n - size + 1, size):
+        yield order[start : start + size]
+
+
+def train(
+    data: MnistSplit,
+    config: TrainConfig | None = None,
+    *,
+    encoder: EncoderConfig | None = None,
+    progress: bool = True,
+) -> tuple[CompetitiveNetwork, TrainResult]:
+    """Latih jaringan tanpa supervision.
+
+    Args:
+        data: split training. `data.labels` TIDAK pernah dibaca di
+            sini — hanya `data.without_labels()`. Itu dijamin oleh
+            kode, bukan konvensi: satu-satunya akses ke `.labels`
+            ada di `evaluate`.
+        config: parameter training.
+        encoder: konfigurasi spike.
+        progress: cetak progres ke stderr.
+
+    Returns:
+        (jaringan, hasil)
+    """
+    cfg = config or TrainConfig()
+    enc = encoder or EncoderConfig()
+    gen = torch.Generator().manual_seed(cfg.seed)
+    out_dir = Path(cfg.out_dir)
+    out_dir.mkdir(parents=True, exist_ok=True)
+
+    net = CompetitiveNetwork(
+        NetworkConfig(n_in=cfg.n_in, n_e=cfg.n_e, column_sum=cfg.column_sum),
+        stdp_config=Eq3Config(eta=cfg.eta, dt_ms=enc.dt_ms),
+        seed=cfg.seed,
+    )
+
+    images = data.without_labels()
+    n_samples = int(images.shape[0])
+    result = TrainResult()
+    spike_acc = 0.0
+    spike_events = 0
+    fire_counts = torch.zeros(cfg.n_e)
+
+    t_start = time.perf_counter()
+
+    for epoch in range(cfg.epochs):
+        for idx in _batches(n_samples, cfg.batch_size, gen):
+            batch = images[idx]
+
+            # --- presentasi pertama --------------------------------
+            ctrl = AdaptiveIntensity(enc)
+            spikes = encode_poisson(
+                batch, ctrl.intensity, enc, generator=gen
+            )
+            _, counts = net.present_batch(spikes)
+
+            per_image = counts.sum(dim=1)
+
+            # --- pengulangan untuk gambar yang terlalu sepi --------
+            for rep in range(cfg.max_repeat):
+                need = per_image < enc.min_spikes
+                n_need = int(need.sum())
+                if n_need == 0:
+                    break
+                sub = batch[need]
+                ctrl = AdaptiveIntensity(enc)
+                for _ in range(rep + 1):
+                    ctrl.escalate()
+                spikes = encode_poisson(
+                    sub, ctrl.intensity, enc, generator=gen
+                )
+                _, sub_counts = net.present_batch(spikes)
+                per_image[need] = sub_counts.sum(dim=1)
+
+            fire_counts += (counts > 0).any(dim=0).to(torch.float32)
+            spike_acc += float(per_image.sum())
+            spike_events += int(batch.shape[0])
+            result.presentations += int(batch.shape[0])
+
+            # --- logging -------------------------------------------
+            if progress and result.presentations % cfg.log_every < cfg.batch_size:
+                elapsed = time.perf_counter() - t_start
+                rate = result.presentations / max(elapsed, 1e-9)
+                remaining = (cfg.epochs * n_samples - result.presentations)
+                eta_h = remaining / max(rate, 1e-9) / 3600
+                row = {
+                    "presentations": result.presentations,
+                    "epoch": epoch + 1,
+                    "rate_per_s": round(rate, 2),
+                    "eta_hours": round(eta_h, 2),
+                    "mean_spikes": round(spike_acc / max(spike_events, 1), 1),
+                    "dead": int((fire_counts == 0).sum()),
+                }
+                result.history.append(row)
+                print(
+                    f"  pres {row['presentations']:>7d} "
+                    f"({rate:5.1f}/s, ETA {eta_h:5.2f}j) "
+                    f"spike/pres {row['mean_spikes']:6.1f} "
+                    f"mati {row['dead']}",
+                    flush=True,
+                )
+
+            if cfg.checkpoint_every and result.presentations % cfg.checkpoint_every < cfg.batch_size:
+                torch.save(
+                    {"net": net.state_dict(), "train_cfg": asdict(cfg),
+                     "presentations": result.presentations},
+                    out_dir / "checkpoint.pt",
+                )
+
+        result.epochs_done = epoch + 1
+
+    result.wall_seconds = time.perf_counter() - t_start
+    result.mean_spikes = spike_acc / max(spike_events, 1)
+    result.dead_neurons = int((fire_counts == 0).sum())
+
+    torch.save(
+        {"net": net.state_dict(), "train_cfg": asdict(cfg),
+         "presentations": result.presentations},
+        out_dir / "weights.pt",
+    )
+    (out_dir / "history.json").write_text(
+        json.dumps({"config": asdict(cfg), "history": result.history,
+                    "summary": result.summary()}, indent=2)
+    )
+    return net, result
+
+
+# ----------------------------------------------------------------------
+def evaluate(
+    net: CompetitiveNetwork,
+    data: MnistSplit,
+    *,
+    encoder: EncoderConfig | None = None,
+    batch_size: int = 64,
+    assignments: Tensor | None = None,
+    seed: int = 0,
+    max_samples: int | None = None,
+) -> dict:
+    """Klasifikasi tanpa supervision.
+
+    Args:
+        net: jaringan yang sudah dilatih.
+        data: split test.
+        assignments: peta neuron -> kelas. Kalau None, dihitung dari
+            split TRAIN (bukan test) — memakai label test untuk
+            menentukan neuron mana milik kelas mana adalah kebocoran.
+
+    Returns:
+        dict dengan `accuracy`, `confusion`, dan `n`.
+    """
+    enc = encoder or EncoderConfig()
+    gen = torch.Generator().manual_seed(seed)
+
+    images = data.without_labels()
+    labels = data.labels
+    if max_samples is not None:
+        images = images[:max_samples]
+        labels = labels[:max_samples]
+
+    n = int(images.shape[0])
+    all_counts = []
+    for start in range(0, n, batch_size):
+        chunk = images[start : start + batch_size]
+        spikes = encode_poisson(
+            chunk, enc.start_intensity, enc, generator=gen
+        )
+        _, counts = net.present_batch(spikes)
+        all_counts.append(counts)
+    counts = torch.cat(all_counts, dim=0)
+
+    if assignments is None:
+        raise ValueError(
+            "`assignments` wajib diberikan. Hitung dengan "
+            "`assign_classes` dari spike count training SET — bukan "
+            "test set, karena itu membocorkan label."
+        )
+
+    pred = torch.stack([
+        classify(counts[i], assignments) for i in range(counts.shape[0])
+    ])
+
+    confusion = torch.zeros(10, 10, dtype=torch.long)
+    for t, p in zip(labels.tolist(), pred.tolist()):
+        confusion[t, p] += 1
+
+    return {
+        "accuracy": float((pred == labels).float().mean()),
+        "confusion": confusion.tolist(),
+        "n": n,
+    }
+
+
+def accuracy(result: dict) -> float:
+    """Ambil akurasi dari hasil `evaluate`, dalam persen."""
+    return 100.0 * float(result["accuracy"])

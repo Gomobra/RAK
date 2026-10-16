@@ -1,0 +1,102 @@
+name: MNIST
+
+on:
+  workflow_dispatch:
+    inputs:
+      neurons:
+        description: "Jumlah neuron eksitasi"
+        required: false
+        default: "100"
+      epochs:
+        description: "Jumlah epoch atas training set"
+        required: false
+        default: "1"
+      eta:
+        description: "Learning rate STDP Eq.3"
+        required: false
+        default: "1e-3"
+      limit:
+        description: "Batas presentasi (0 = penuh 60000)"
+        required: false
+        default: "0"
+      smoke:
+        description: "Jalankan smoke test dulu"
+        type: boolean
+        required: false
+        default: true
+      gate:
+        description: "Gagal kalau akurasi di bawah ini (0 = tanpa gate)"
+        required: false
+        default: "0"
+  push:
+    paths:
+      - "src/rak/network/**"
+      - "src/rak/learning/**"
+      - "src/rak/data/**"
+    branches: [main]
+
+concurrency:
+  group: mnist-${{ github.ref }}
+  cancel-in-progress: false   # JANGAN cancel — run panjang kills sia-sia
+
+env:
+  # PyTorch di runner: set thread eksplisit supaya tidak oversubscribe.
+  # Runner GitHub punya 2 vCPU; default torch akan spawn 2 thread per
+  # op dan saling berebut.
+  OMP_NUM_THREADS: "2"
+  MKL_NUM_THREADS: "2"
+
+jobs:
+  train:
+    runs-on: ubuntu-latest
+    # Batas keras. Default GitHub 6 jam; run 400 neuron bisa makan lebih.
+    timeout-minutes: 360
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e ".[dev]"
+
+      - name: Cache MNIST
+        uses: actions/cache@v4
+        with:
+          path: data/mnist
+          key: mnist-v1
+
+      - name: Train + evaluate
+        run: |
+          python scripts/run_mnist.py \
+            --neurons ${{ github.event.inputs.neurons || '100' }} \
+            --epochs ${{ github.event.inputs.epochs || '1' }} \
+            --eta ${{ github.event.inputs.eta || '1e-3' }} \
+            --limit ${{ github.event.inputs.limit || '0' }} \
+            --gate ${{ github.event.inputs.gate || '0' }} \
+            ${{ github.event.inputs.smoke == 'false' && '--no-smoke' || '' }}
+
+      - name: Upload weights
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: rak-mnist-${{ github.event.inputs.neurons || '100' }}n-${{ github.run_number }}
+          path: runs/mnist/
+          retention-days: 30
+
+      - name: Commit report
+        if: always() && hashFiles('runs/mnist/report.json') != ''
+        run: |
+          mkdir -p experiments/exp_003_mnist
+          cp runs/mnist/report.json experiments/exp_003_mnist/ 2>/dev/null || true
+          cp runs/mnist/history.json experiments/exp_003_mnist/ 2>/dev/null || true
+          git config user.name "rak-ci"
+          git config user.email "rak-ci@users.noreply.github.com"
+          git add experiments/exp_003_mnist/ || true
+          git diff --cached --quiet || git commit -q -m "exp_003: laporan MNIST (run ${{ github.run_number }})"
+          git push || echo "push gagal (branch protections), laporan tetap ada di artifact"

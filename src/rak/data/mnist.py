@@ -107,6 +107,19 @@ class MnistSplit:
         """Cuma gambar — bentuk yang boleh dipakai loop training."""
         return self.images
 
+    def subset(self, n: int | None = None) -> "MnistSplit":
+        """Takes `n` contoh pertama, label ikut.
+
+        Dipakai untuk smoke test dan milestone kecil: tanpa ini
+        `train()` akan gagal dengan `AttributeError` yang membingungkan
+        kalau diteruskan `split.images` langsung.
+        """
+        if n is None:
+            return self
+        return MnistSplit(
+            images=self.images[:n], labels=self.labels[:n], split=self.split
+        )
+
     def label_histogram(self) -> Tensor:
         """Jumlah contoh per digit. Untuk mendeteksi split yang rusak."""
         return torch.bincount(self.labels, minlength=_N_CLASSES)
