@@ -606,7 +606,7 @@ def test_additive_variants_window_ignores_w_ref():
     """Kontrol untuk dua test di atas: additive HARUS datar.
 
     Diletakkan berdekatan dengan test multiplicative supaya kalau
-    одна family's test irritated, yang lain langsung jadi kontrol.
+    satu keluarga test gagal, yang lain langsung jadi kontrol.
     """
     cfg = STDPConfig(algorithm="additive")
     peaks = [float(stdp_window(1.0, cfg, w_ref=wr)[1].max())

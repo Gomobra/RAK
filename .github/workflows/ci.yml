@@ -52,11 +52,11 @@ jobs:
     timeout-minutes: 5
     steps:
       - uses: actions/checkout@v4
-      - name: No stray CJK characters
+      - name: No stray CJK or Cyrillic characters
         run: |
-          if grep -rlP '[\x{4e00}-\x{9fff}\x{3040}-\x{30ff}]' \
-               --include='*.py' --include='*.md' . ; then
-            echo "::error::CJK characters found in source or docs"
+          if grep -rlP '[\x{4e00}-\x{9fff}\x{3040}-\x{30ff}\x{0400}-\x{04ff}]' \
+               --include='*.py' --include='*.md' --include='*.yml' . ; then
+            echo "::error::CJK/Cyrillic characters found in source or docs"
             exit 1
           fi
           echo "clean"

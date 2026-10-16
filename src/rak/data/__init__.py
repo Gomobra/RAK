@@ -1,5 +1,16 @@
-"""Data loading. Semuanya tanpa dependensi jaringan kecuali MNIST."""
+"""Data: pembaca MNIST dan encoding spike.
 
+Semua tanpa dependensi jaringan, kecuali `mnist.load_mnist` yang memang
+perlu mengunduh file IDX kalau belum ada di cache.
+"""
+
+from rak.data.encode import (
+    AdaptiveIntensity,
+    EncoderConfig,
+    encode_poisson,
+    estimated_rate_hz,
+    spike_counts,
+)
 from rak.data.mnist import (
     MIRRORS,
     SPLITS,
@@ -12,6 +23,11 @@ from rak.data.mnist import (
 )
 
 __all__ = [
+    "AdaptiveIntensity",
+    "EncoderConfig",
+    "encode_poisson",
+    "estimated_rate_hz",
+    "spike_counts",
     "MnistSplit",
     "MIRRORS",
     "SPLITS",
