@@ -240,6 +240,23 @@ def eq3_step(
 
     # --- 2. update pada spike post -------------------------------------
     fired = z_post > 0
+
+    # LEWATI SELURUH PERHITUNGAN kalau tidak ada neuron post yang
+    # menyala timestep ini.
+    #
+    # Eq. 3 hanya mengubah bobot pada spike postsinaptik. Kalau tidak
+    # ada, `dw` pasti nol dan `w` tidak berubah — jadi `weight_term`
+    # yang butuh `pow(mu)` (4.2 ms untuk (784,400) di CPU ARM) tidak
+    # perlu dihitung sama sekali.
+    #
+    # Ini bukan optimasi kecil: dengan ~5 spike per gambar dari 400
+    # neuron dalam 700 timestep, lebih dari 99% timestep bisa
+    # dilewati. Tanpa ini, `pow`_sendiri menghabiskan sebagian besar
+    # waktu training.
+    if not bool(fired.any()):
+        pre_bumped = pre_d + z_pre
+        return w, Eq3State(pre=pre_bumped, x_tar=x_tar_cur)
+
     # Bobot dipakai BERSAMA seluruh batch, jadi selalu pakai matriks
     # 2D-nya — baik untuk rata-rata jejak pre maupun untuk suku
     # `(w_max - w)^mu`.

@@ -224,6 +224,7 @@ class ConductanceLIF(nn.Module):
         ge_drive: Tensor,
         gi_drive: Tensor,
         state: ConductanceState,
+        v_th: Tensor | None = None,
     ) -> tuple[Tensor, ConductanceState]:
         """Satu timestep.
 
@@ -232,6 +233,16 @@ class ConductanceLIF(nn.Module):
                 sudah berbobot W. Shape (n_neurons,) atau (B, n_neurons).
             gi_drive: conductance inhibisi yang ditambahkan, sudah berbobot.
             state: state sebelumnya.
+            v_th: threshold EFEKTIF untuk timestep ini. Kalau None,
+                pakai `self.v_th` (tetap). Thesis adaptif Diehl-Cook
+                melewati lewat parameter ini — bentuknya
+
+                    v_th_eff = theta - offset + v_th
+
+                dengan `theta` yang adaptif dan `offset` konstanta.
+                Diehl-Cook memakai offset = 20 mV dengan `theta` awal
+                20 mV, sehingga threshold efektif di timestep pertama
+                persis sama dengan `v_th`.
 
         Returns:
             (spikes, new_state)
@@ -261,7 +272,8 @@ class ConductanceLIF(nn.Module):
                 v_new,
             )
 
-        spikes = (v_new >= self.v_th).to(torch.float32)
+        threshold = self.v_th if v_th is None else v_th
+        spikes = (v_new >= threshold).to(torch.float32)
         if timer is not None:
             spikes = torch.where(
                 timer >= cfg.refrac_ms, spikes, torch.zeros_like(spikes)
