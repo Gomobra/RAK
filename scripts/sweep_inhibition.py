@@ -79,7 +79,15 @@ def temporal_decorrelation(z_e: torch.Tensor) -> float:
     if float(z_e.sum()) < 2:
         return 1.0
     series = z_e.permute(0, 2, 1).reshape(z_e.shape[0], -1).double()
+    # Neuron yang tidak pernah fire punya varians nol -> korelasinya
+    # NaN, dan `mean()` jadi NaN seluruh metrik. Versi pertama tidak
+    # menjaga ini dan mengembalikan NaN untuk semua konfigurasi.
+    keep = series.std(dim=0) > 0
+    if int(keep.sum()) < 2:
+        return 1.0
+    series = series[:, keep]
     corr = torch.corrcoef(series)
+    corr = torch.nan_to_num(corr, nan=0.0)
     n = corr.shape[0]
     off = corr[~torch.eye(n, dtype=torch.bool)]
     return float(off.mean())
@@ -146,6 +154,7 @@ def run_config(
     seed: int,
     n_classes: int,
     assign_samples: int = 1500,
+    rule: str = "variant3",
 ) -> dict:
     train_set = load_mnist(data_dir, "train", download=True)
     images = train_set.images
@@ -153,7 +162,7 @@ def run_config(
     enc = EncoderConfig()
 
     net = CompetitiveNetwork(
-        NetworkConfig(n_e=n_e, inhibition_strength=strength),
+        NetworkConfig(n_e=n_e, inhibition_strength=strength, rule=rule),
         stdp_config=Eq3Config(eta=eta, dt_ms=enc.dt_ms),
         seed=seed,
     )
@@ -190,6 +199,7 @@ def run_config(
     )
 
     return {
+        "rule": rule,
         "inhibition_strength": strength,
         "n_e": n_e,
         "batches": batches,
@@ -217,29 +227,34 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("--batch-size", type=int, default=64)
     p.add_argument("--eta", type=float, default=1e-3)
     p.add_argument("--seed", type=int, default=1)
+    p.add_argument("--rules", default="variant3,eq3",
+                   help="rule STDP yang dicoba (pisah koma)")
     p.add_argument("--assign", type=int, default=1500,
                    help="jumlah presentasi untuk menentukan assignment kelas")
     args = p.parse_args(argv)
 
     strengths = [float(x) for x in args.strengths.split(",")]
+    rules = args.rules.split(",")
     out_dir = Path(args.out)
     out_dir.mkdir(parents=True, exist_ok=True)
 
     rows = []
-    print(f"{'strength':>9} {'deco':>7} {'colcorr':>8} {'kelas':>6} "
-          f"{'mati':>5} {'spike/pres':>11}", flush=True)
-    for s in strengths:
+    print(f"{'rule':>10} {'strength':>9} {'deco':>7} {'colcorr':>8} "
+          f"{'kelas':>6} {'mati':>5} {'spike/pres':>11}", flush=True)
+    for rule in rules:
+      for s in strengths:
         t0 = time.perf_counter()
         row = run_config(
             Path(args.data_dir), s,
             n_e=args.neurons, batches=args.batches,
             batch_size=args.batch_size, eta=args.eta,
             seed=args.seed, n_classes=10, assign_samples=args.assign,
+            rule=rule,
         )
         row["seconds"] = round(time.perf_counter() - t0, 1)
         rows.append(row)
         print(
-            f"{s:>9.1f} {row['final_deco']:>7.3f} "
+            f"{rule:>10} {s:>9.1f} {row['final_deco']:>7.3f} "
             f"{row['final_col_corr']:>8.3f} {row['classes_used']:>6d} "
             f"{row['dead_neurons']:>5d} "
             f"{row['spikes_per_presentation']:>11.1f}",
@@ -249,12 +264,17 @@ def main(argv: list[str] | None = None) -> int:
 
     # ringkasan: konfigurasi terbaik = deco rendah, kelas banyak,
     # col_corr tidak merambat ke 1
+    usable = [r for r in rows if r["final_deco"] == r["final_deco"]]
+    if not usable:
+        print("\nTIDAK ADA konfigurasi dengan metrik valid", flush=True)
+        return 1
     best = max(
-        rows,
+        usable,
         key=lambda r: (r["classes_used"], -r["final_deco"], -r["final_col_corr"]),
     )
     print(
-        f"\nTERBAIK: inhibition_strength={best['inhibition_strength']} "
+        f"\nTERBAIK: rule={best['rule']} "
+        f"inhibition_strength={best['inhibition_strength']} "
         f"(deco {best['final_deco']:.3f}, "
         f"{best['classes_used']} kelas, "
         f"col_corr {best['final_col_corr']:.3f})",
@@ -267,16 +287,18 @@ def main(argv: list[str] | None = None) -> int:
         f"Jaringan {args.neurons} neuron, {args.batches} batch "
         f"({args.batches * args.batch_size} presentasi), eta={args.eta}.",
         "",
-        "| strength | deco (lower better) | col_corr | kelas | mati | spike/pres |",
-        "|---|---|---|---|---|---|",
+        "| rule | strength | deco (lower better) | col_corr | kelas | mati | spike/pres |",
+        "|---|---|---|---|---|---|---|",
     ]
     for r in rows:
+        d = r['final_deco']
         table.append(
-            f"| {r['inhibition_strength']} | {r['final_deco']:.3f} | "
+            f"| {r['rule']} | {r['inhibition_strength']} | {d:.3f} | "
             f"{r['final_col_corr']:.3f} | {r['classes_used']}/10 | "
             f"{r['dead_neurons']} | {r['spikes_per_presentation']:.0f} |"
         )
-    table += ["", f"**Terbaik:** `inhibition_strength = {best['inhibition_strength']}`", ""]
+    table += ["", f"**Terbaik:** rule `{best['rule']}`, "
+              f"`inhibition_strength = {best['inhibition_strength']}`", ""]
     (out_dir / "sweep.md").write_text("\n".join(table))
 
     summary = "\n".join(table)

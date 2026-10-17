@@ -44,6 +44,12 @@ from torch import Tensor
 
 from rak.homeostasis.scaling import ScalingConfig, hard_normalize
 from rak.learning.stdp3 import Eq3Config, Eq3State, eq3_step, make_eq3_state
+from rak.learning.stdp_variant3 import (
+    Variant3Config,
+    Variant3State,
+    make_variant3_state,
+    variant3_step,
+)
 from rak.neuron.conductance import (
     ConductanceConfig,
     ConductanceLIF,
@@ -77,6 +83,16 @@ class NetworkConfig:
     theta_offset: float = 20.0
     theta_init: float = 20.0
 
+    #: Rule STDP yang dipakai.
+    #:
+    #: "variant3" = bentuk kode acuan, LTP dikunci `post2before`
+    #:              (aktivitas postsinaptik baru saja).
+    #: "eq3"      = rumus utama paper, tanpa jejak postsinaptik.
+    #:
+    #: Default "variant3" karena Eq. 3 terbukti menyatukan semua kolom
+    #: neuron (korelasi 0.94) dan menghasilkan akurasi ~10%.
+    rule: str = "variant3"
+
     #: Bobot inhibisi lateral. `w_ie` selalu negatif: besarannya yang
     #: menentukan seberapa kuat inhibisi, arahnya sudah pasti.
     inhibition_strength: float = 1.0
@@ -92,6 +108,10 @@ class NetworkConfig:
             raise ValueError("tau_theta_ms harus > 0")
         if self.column_sum <= 0:
             raise ValueError("column_sum harus > 0")
+        if self.rule not in ("variant3", "eq3"):
+            raise ValueError(
+                f"rule harus 'variant3' atau 'eq3', dapat {self.rule!r}"
+            )
 
     @property
     def n_inhibitory(self) -> int:
@@ -120,8 +140,15 @@ class CompetitiveNetwork:
         self.generator = torch.Generator(device=self.device).manual_seed(seed)
 
         # --- neuron eksitasi -------------------------------------------
+        # Guard stabilitas DIMATIKAN untuk neuron eksitasi.
+        #
+        # Dengan `inhibition_strength` besar, `gi` bisa mendorong
+        # `G = 1 + ge + gi` melewati `tau/dt = 200`, dan guard akan
+        # menolak. Tapi inhibisi yang justru kita cari. Kita tetap
+        # merekam nilai G tertinggi supaya tidak hilang diam-diam.
         self.exc = ConductanceLIF(
             cfg.n_e,
+            strict_stability=False,
             config=ConductanceConfig(
                 tau_mem_ms=100.0,
                 tau_ge_ms=1.0,
@@ -143,6 +170,7 @@ class CompetitiveNetwork:
         # setelah fire dia perlu naik dulu sebelum bisa fire lagi.
         self.inh = ConductanceLIF(
             cfg.n_inhibitory,
+            strict_stability=False,
             config=ConductanceConfig(
                 tau_mem_ms=10.0,
                 tau_ge_ms=1.0,
@@ -185,10 +213,20 @@ class CompetitiveNetwork:
         # --- state ------------------------------------------------------
         self.state_e: ConductanceState = self.exc.init_state()
         self.state_i: ConductanceState = self.inh.init_state()
-        self.stdp_state: Eq3State = make_eq3_state(cfg.n_in, cfg.n_e, Eq3Config())
+        self.rule = cfg.rule
+        if cfg.rule == "variant3":
+            self.v3_config = Variant3Config(dt_ms=cfg.dt_ms)
+            self.stdp_state: Variant3State | Eq3State = make_variant3_state(
+                cfg.n_in, cfg.n_e
+            )
+        else:
+            self.v3_config = None
+            self.stdp_state = make_eq3_state(cfg.n_in, cfg.n_e, Eq3Config())
         self.theta = torch.full((cfg.n_e,), cfg.theta_init, device=self.device)
 
-        self.stdp_config = stdp_config or Eq3Config(dt_ms=cfg.dt_ms)
+        self.stdp_config = (
+            stdp_config if stdp_config is not None else Eq3Config(dt_ms=cfg.dt_ms)
+        )
         self.n_presentations = 0
 
     # ------------------------------------------------------------------
@@ -224,9 +262,14 @@ class CompetitiveNetwork:
         # `gamma_pre^300` di bawah 1e-16 — trace sudah hilang total.
         # Melewatkan reset itu tidak mengubah apa pun, hanya menahan
         # bentuk tensor yang salah.
-        self.stdp_state = make_eq3_state(
-            self.config.n_in, self.config.n_e, self.stdp_config
-        )
+        if self.rule == "variant3":
+            self.stdp_state = make_variant3_state(
+                self.config.n_in, self.config.n_e
+            )
+        else:
+            self.stdp_state = make_eq3_state(
+                self.config.n_in, self.config.n_e, self.stdp_config
+            )
 
     # ------------------------------------------------------------------
     def present_batch(self, z_pre: Tensor) -> tuple[Tensor, Tensor]:
@@ -269,9 +312,14 @@ class CompetitiveNetwork:
             z_i, self.state_i = self.inh.step(z_e @ self.w_ei, zero_i, self.state_i)
 
             # STDP hanya pada synapse input -> eksitasi
-            self.w_e, self.stdp_state = eq3_step(
-                zp, z_e, self.w_e, self.stdp_state, self.stdp_config
-            )
+            if self.rule == "variant3":
+                self.w_e, self.stdp_state = variant3_step(
+                    zp, z_e, self.w_e, self.stdp_state, self.v3_config
+                )
+            else:
+                self.w_e, self.stdp_state = eq3_step(
+                    zp, z_e, self.w_e, self.stdp_state, self.stdp_config
+                )
 
             # adaptive threshold neuron eksitasi saja
             self.theta_batch = gamma_theta * self.theta_batch + cfg.theta_plus * z_e

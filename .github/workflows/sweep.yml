@@ -14,7 +14,11 @@ on:
       strengths:
         description: "Nilai inhibition_strength yang dicoba (pisah koma)"
         required: false
-        default: "0,1,2,4,8,16"
+        default: "0,1,2,4"
+      rules:
+        description: "Rule STDP yang dicoba (pisah koma)"
+        required: false
+        default: "variant3,eq3"
       eta:
         description: "Learning rate STDP"
         required: false
@@ -58,7 +62,8 @@ jobs:
           python scripts/sweep_inhibition.py \
             --neurons ${{ github.event.inputs.neurons || '100' }} \
             --batches ${{ github.event.inputs.batches || '40' }} \
-            --strengths "${{ github.event.inputs.strengths || '0,1,2,4,8,16' }}" \
+            --strengths "${{ github.event.inputs.strengths || '0,1,2,4' }}" \
+            --rules "${{ github.event.inputs.rules || 'variant3,eq3' }}" \
             --eta ${{ github.event.inputs.eta || '1e-3' }}
 
       - name: Upload sweep results
