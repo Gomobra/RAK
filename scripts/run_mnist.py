@@ -33,7 +33,8 @@ import torch
 
 from rak.data.encode import EncoderConfig, encode_poisson
 from rak.data.mnist import load_mnist
-from rak.network import assign_classes
+from rak.network import CompetitiveNetwork, NetworkConfig, assign_classes
+from rak.learning.stdp3 import Eq3Config
 from rak.network.train import TrainConfig, accuracy, evaluate, train
 
 #: Target akurasi perNetworkConfig().n_e, dari Diehl & Cook 2015 Table 1.
@@ -54,8 +55,103 @@ def _fmt_gate(n_e: int, acc: float) -> str:
     )
 
 
+
+def _report(acc, meta) -> str:
+    n_e = meta["neurons"]
+    lines = [
+        "=" * 62,
+        "  RAK — MNIST unsupervised (STDP Eq.3, tanpa teaching signal)",
+        "=" * 62,
+        f"  neuron eksitasi      : {n_e}",
+        f"  epoch / presentasi   : {meta.get('epochs', '?')} / "
+        f"{meta.get('presentations', '?')}",
+        f"  spike per presentasi : {meta.get('mean_spikes', 0):.1f}",
+        f"  neuron mati          : {meta.get('dead_neurons', '?')}",
+        f"  AKURASI TEST         : {acc:.2f}%",
+    ]
+    lines.append(_fmt_gate(n_e, acc))
+    lines.append(f"  waktu total          : {meta.get('wall_minutes', 0)} menit")
+    lines.append("=" * 62)
+    return "\n".join(lines)
+
+
+def _evaluate_only(args, net, train_set, test_set, enc, saved_assignments):
+    """Muat bobot yang sudah dilatih, lalu ukur akurasi saja.
+
+    Dipakai setelah run yang selesai training tapi gagal di langkah
+    evaluasi. Menghemat 3 jam training ulang karena masalahnya
+    bukan di training.
+    """
+    gen = torch.Generator().manual_seed(args.seed + 1)
+
+    if saved_assignments is not None:
+        assignments = torch.as_tensor(saved_assignments)
+    else:
+        n_assign = args.assign_samples or min(len(train_set), 10_000)
+        chunks = []
+        for start in range(0, n_assign, args.batch):
+            _, c = net.present_batch(
+                encode_poisson(
+                    train_set.images[start : start + args.batch],
+                    enc.start_intensity, enc, generator=gen,
+                )
+            )
+            chunks.append(c)
+        assignments = assign_classes(
+            torch.cat(chunks, dim=0), train_set.labels[:n_assign]
+        )
+
+    per_class = torch.bincount(assignments, minlength=10)
+    print(
+        f"  neuron per kelas: {sorted(per_class.tolist(), reverse=True)}",
+        flush=True,
+    )
+
+    result = evaluate(
+        net, test_set, encoder=enc, batch_size=args.batch,
+        assignments=assignments, seed=args.seed + 2,
+        max_samples=args.test_limit or None,
+    )
+    acc = accuracy(result)
+
+    out_dir = Path(args.out)
+    out_dir.mkdir(parents=True, exist_ok=True)
+    (out_dir / "report.json").write_text(json.dumps({
+        "neurons": int(assignments.shape[0]),
+        "test_accuracy_percent": acc,
+        "paper_accuracy_percent": PAPER_ACCURACY.get(int(assignments.shape[0])),
+        "assignments": assignments.tolist(),
+        "confusion_matrix": result["confusion"],
+        "n_test": result["n"],
+        "resumed_from": args.resume,
+    }, indent=2))
+    torch.save({"net": net.state_dict(), "assignments": assignments},
+               out_dir / "weights.pt")
+
+    summary = _report(acc, {
+        "neurons": int(assignments.shape[0]),
+        "mean_spikes": float("nan"),
+        "wall_minutes": round(
+            (time.perf_counter() - _T0) / 60, 1),
+    })
+    print("\n" + summary, flush=True)
+    if "GITHUB_STEP_SUMMARY" in os.environ:
+        Path(os.environ["GITHUB_STEP_SUMMARY"]).write_text(
+            f"```\n{summary}\n```\n"
+        )
+    if args.gate and acc < args.gate:
+        print(f"\nGATE GAGAL: {acc:.2f}% < {args.gate}%", flush=True)
+        return 1
+    return 0
+
+
+_T0 = time.perf_counter()
+
+
 def run(args: argparse.Namespace) -> int:
+    global _T0
     t0 = time.perf_counter()
+    _T0 = t0
     data_dir = Path(args.data_dir)
     out_dir = Path(args.out)
     out_dir.mkdir(parents=True, exist_ok=True)
@@ -112,6 +208,32 @@ def run(args: argparse.Namespace) -> int:
 
     # ---------------- stage 2: training ----------------------------
     subset = train_set.subset(args.limit) if args.limit else train_set
+
+    if args.resume:
+        print(
+            f"\n[2b/4] RESUME: muat bobot dari {args.resume}",
+            flush=True,
+        )
+        blob = torch.load(args.resume, map_location="cpu", weights_only=False)
+        net = CompetitiveNetwork(
+            NetworkConfig(
+                n_in=train_set.n_features,
+                n_e=len(blob["net"]["w_e"][0]),
+                column_sum=args.column_sum,
+            ),
+            stdp_config=Eq3Config(eta=args.eta),
+            seed=args.seed,
+        )
+        net.load_state_dict(blob["net"])
+        if "assignments" in blob:
+            print(
+                "  bobot sudah punya assignments; hanya perlu tes",
+                flush=True,
+            )
+            saved = blob["assignments"]
+        else:
+            saved = None
+        return _evaluate_only(args, net, train_set, test_set, enc, saved)
     print(
         f"\n[3/4] TRAINING: {args.neurons} neuron, {args.epochs} epoch, "
         f"eta={args.eta}",
@@ -136,11 +258,22 @@ def run(args: argparse.Namespace) -> int:
     print("\n[4/4] EVALUASI (10.000 test set)", flush=True)
     gen = torch.Generator().manual_seed(args.seed + 1)
     n_assign = args.assign_samples or min(len(subset), 10_000)
-    _, counts = net.present_batch(
-        encode_poisson(
-            subset.images[:n_assign], enc.start_intensity, enc, generator=gen
+
+    # PENTING: batch per bagian. Versi pertama memanggil
+    # `encode_poisson` untuk 10.000 gambar sekaligus, yang membuat
+    # tensor (700, 10000, 784) = 21.9 GB -- runner punya 16 GB dan
+    # crash. Run 3 jam itu hilang di langkah terakhir, setelah
+    # training selesai dan bobot sudah aman.
+    train_counts = []
+    for start in range(0, n_assign, args.batch):
+        chunk = subset.images[start : start + args.batch]
+        _, c = net.present_batch(
+            encode_poisson(
+                chunk, enc.start_intensity, enc, generator=gen
+            )
         )
-    )
+        train_counts.append(c)
+    counts = torch.cat(train_counts, dim=0)
     assignments = assign_classes(counts, subset.labels[:n_assign])
     n_per_class = int(torch.bincount(assignments, minlength=10).min())
     print(
@@ -230,6 +363,9 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--smoke-neurons", type=int, default=100)
     p.add_argument("--smoke-minutes", type=int, default=5)
     # gate
+    p.add_argument("--resume", default="",
+                   help="path ke weights.pt — lewati training, hanya evaluasi")
+    p.add_argument("--column-sum", type=float, default=78.0)
     p.add_argument("--gate", type=float, default=0.0,
                    help="gagal (exit 1) kalau akurasi di bawah ini")
     return p
