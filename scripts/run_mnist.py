@@ -89,16 +89,20 @@ def _evaluate_only(args, net, train_set, test_set, enc, saved_assignments):
     else:
         n_assign = args.assign_samples or min(len(train_set), 10_000)
         chunks = []
-        for start in range(0, n_assign, args.batch):
+        start = 0
+        while start < n_assign:
+            end = min(start + args.batch, n_assign)
             _, c = net.present_batch(
                 encode_poisson(
-                    train_set.images[start : start + args.batch],
+                    train_set.images[start:end],
                     enc.start_intensity, enc, generator=gen,
                 )
             )
             chunks.append(c)
+            start = end
+        counts = torch.cat(chunks, dim=0)
         assignments = assign_classes(
-            torch.cat(chunks, dim=0), train_set.labels[:n_assign]
+            counts, train_set.labels[:counts.shape[0]]
         )
 
     per_class = torch.bincount(assignments, minlength=10)
@@ -264,17 +268,23 @@ def run(args: argparse.Namespace) -> int:
     # tensor (700, 10000, 784) = 21.9 GB -- runner punya 16 GB dan
     # crash. Run 3 jam itu hilang di langkah terakhir, setelah
     # training selesai dan bobot sudah aman.
+    # Chunk tidak boleh MELAMPAUI n_assign. `range(0, 4000, 64)`
+    # berakhir di 4032, jadi `labels[:4000]` tidak akan sama panjang
+    # dengan counts -- persis bug yang menggagalkan sweep 18 menit lalu.
     train_counts = []
-    for start in range(0, n_assign, args.batch):
-        chunk = subset.images[start : start + args.batch]
+    start = 0
+    while start < n_assign:
+        end = min(start + args.batch, n_assign)
         _, c = net.present_batch(
             encode_poisson(
-                chunk, enc.start_intensity, enc, generator=gen
+                subset.images[start:end],
+                enc.start_intensity, enc, generator=gen,
             )
         )
         train_counts.append(c)
+        start = end
     counts = torch.cat(train_counts, dim=0)
-    assignments = assign_classes(counts, subset.labels[:n_assign])
+    assignments = assign_classes(counts, subset.labels[:counts.shape[0]])
     n_per_class = int(torch.bincount(assignments, minlength=10).min())
     print(
         f"  neuron per kelas: min {n_per_class}, "

@@ -95,6 +95,46 @@ def column_correlation(w: torch.Tensor) -> float:
 
 
 # ----------------------------------------------------------------------
+def _chunks(n: int, size: int):
+    """Rentang batch yang TIDAK MELAMPAUI `n`.
+
+    `range(0, n, size)` menghasilkan chunk terakhir yang bisa melewati
+    `n`: untuk n=4000, size=64, rentang terakhir mulai di 3968 dan
+    berakhir di 4032. Kalau `images[3968:4032]` dipakai tapi
+    `labels[:4000]` dipotong di 4000, jumlah kolom dan jumlah label
+    tidak sama dan `assign_classes` meledak dengan:
+
+        IndexError: shape of the mask [4000] does not match the
+        indexed tensor [4032, 100]
+
+    Bug ini menelan 18 menit run sweep — bukan karena lambat, tapi
+    karena crash di langkah terakhir.
+    """
+    start = 0
+    while start < n:
+        end = min(start + size, n)
+        yield start, end
+        start = end
+
+
+def _assign(net, images, labels, n, batch_size, enc, seed, n_classes=10):
+    """Assignment neuron -> kelas dari sejumlah presentasi TRAIN."""
+    chunks = []
+    gen = torch.Generator().manual_seed(seed)
+    for start, end in _chunks(n, batch_size):
+        _, c = net.present_batch(
+            encode_poisson(
+                images[start:end], enc.start_intensity, enc, generator=gen
+            )
+        )
+        chunks.append(c)
+    counts = torch.cat(chunks, dim=0)
+    used = counts.shape[0]
+    assignments = assign_classes(counts, labels[:used])
+    per_class = torch.bincount(assignments, minlength=n_classes)
+    return assignments, per_class
+
+
 def run_config(
     data_dir: Path,
     strength: float,
@@ -105,6 +145,7 @@ def run_config(
     eta: float,
     seed: int,
     n_classes: int,
+    assign_samples: int = 1500,
 ) -> dict:
     train_set = load_mnist(data_dir, "train", download=True)
     images = train_set.images
@@ -140,20 +181,13 @@ def run_config(
             traj_col.append(column_correlation(net.w_e))
             traj_deco.append(temporal_decorrelation(z_e))
 
-    # jumlah kelas yang dapat neuron
-    n_assign = min(images.shape[0], 4000)
-    chunks = []
-    gen2 = torch.Generator().manual_seed(seed + 99)
-    for start in range(0, n_assign, batch_size):
-        _, c = net.present_batch(
-            encode_poisson(
-                images[start : start + batch_size],
-                enc.start_intensity, enc, generator=gen2,
-            )
-        )
-        chunks.append(c)
-    assignments = assign_classes(torch.cat(chunks, dim=0), labels[:n_assign])
-    per_class = torch.bincount(assignments, minlength=n_classes)
+    # Jumlah kelas yang dapat neuron. `n_assign` sengaja kecil:
+    # fase ini butuh presentasi TAMBAHAN, dan kalau lebih besar dari
+    # training-nya sendiri, separuh waktu sweep habis di sini.
+    n_assign = min(images.shape[0], assign_samples)
+    assignments, per_class = _assign(
+        net, images, labels, n_assign, batch_size, enc, seed + 99
+    )
 
     return {
         "inhibition_strength": strength,
@@ -183,6 +217,8 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("--batch-size", type=int, default=64)
     p.add_argument("--eta", type=float, default=1e-3)
     p.add_argument("--seed", type=int, default=1)
+    p.add_argument("--assign", type=int, default=1500,
+                   help="jumlah presentasi untuk menentukan assignment kelas")
     args = p.parse_args(argv)
 
     strengths = [float(x) for x in args.strengths.split(",")]
@@ -198,7 +234,7 @@ def main(argv: list[str] | None = None) -> int:
             Path(args.data_dir), s,
             n_e=args.neurons, batches=args.batches,
             batch_size=args.batch_size, eta=args.eta,
-            seed=args.seed, n_classes=10,
+            seed=args.seed, n_classes=10, assign_samples=args.assign,
         )
         row["seconds"] = round(time.perf_counter() - t0, 1)
         rows.append(row)
