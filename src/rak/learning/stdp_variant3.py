@@ -166,22 +166,31 @@ def variant3_step(
 
     w_ref = w if w.dim() == 2 else w[0]
 
-    # --- 2. LTD, dipicu spike presinaptik -----------------------------
-    # Aturan ini memang punya suku LTD berbasis spike pre — itulah
-    # bedanya dari Eq. 3. Di sini itu disengaja.
-    dw_ltd = torch.einsum("bi,j->bij", z_pre * cfg.nu_pre, post1_d)
+    # --- 2 & 3. LTD (spike pre) dan LTP (spike post) -----------------
+    # Bentuk non-batched lebih dulu; jalur batch di bawah.
+    if z_pre.dim() == 1:
+        dw = (
+            cfg.nu_post * torch.outer(pre_d, post2_d) * z_post
+            - cfg.nu_pre * torch.outer(z_pre, post1_d)
+        )
+    else:
+        # Rata-rata batch DULU, baru perkalikan. Operasinya linear
+        # dalam `pre_d` dan `post2_d` untuk `z_pre`/`z_post` yang
+        # tetap, jadi hasilnya sama dengan menjumlahkan lalu membagi —
+        # tapi tidak pernah membentuk tensor (B, n_in, n_out).
+        #
+        # `w` dipakai BERSAMA seluruh batch; dijumlahkan akan memberi
+        # learning rate B kali lebih besar.
+        mean_pre = (pre_d * cfg.nu_post).mean(dim=0)      # (n_in,)
+        mean_post2 = post2_d.mean(dim=0)                  # (n_out,)
+        mean_zpre = z_pre.mean(dim=0) * cfg.nu_pre        # (n_in,)
+        mean_post1 = post1_d.mean(dim=0)                  # (n_out,)
+        mean_fired = fired.to(torch.float32).mean(dim=0)  # (n_out,)
 
-    # --- 3. LTP, dipicu spike postsinaptik, DIKUNCI post2before ------
-    # `post2_d` sudah bernilai SEBELUM di-bump — itu `post2before`.
-    # Kalau nilainya 0 (neuron belum pernah menyala), LTP-nya 0.
-    dw_ltp = torch.einsum("bi,bj->bij", pre_d * cfg.nu_post, post2_d) * fired
-
-    dw = dw_ltp - dw_ltd
-
-    # Rata-rata batch: `w` dipakai BERSAMA seluruh batch. Dijumlahkan
-    # akan memberi learning rate B kali lebih besar.
-    if dw.dim() == 3:
-        dw = dw.mean(dim=0)
+        dw = (
+            torch.outer(mean_pre, mean_post2) * mean_fired.unsqueeze(0)
+            - torch.outer(mean_zpre, mean_post1)
+        )
 
     w_new = (w + dw).clamp(cfg.w_min, cfg.w_max)
 
