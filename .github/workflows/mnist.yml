@@ -28,12 +28,10 @@ on:
         description: "Gagal kalau akurasi di bawah ini (0 = tanpa gate)"
         required: false
         default: "0"
-  push:
-    paths:
-      - "src/rak/network/**"
-      - "src/rak/learning/**"
-      - "src/rak/data/**"
-    branches: [main]
+# CATATAN: TIDAK ada trigger `push` di sini, hanya workflow_dispatch.
+# Versi pertama punya `on: push`, dan setiap commit ke path src/rak/
+# langsung menyalakan run 3 jam tanpa diminta. Sekarang hanya jalan
+# kalau diminta.
 
 concurrency:
   group: mnist-${{ github.ref }}
