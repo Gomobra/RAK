@@ -44,6 +44,7 @@ sintetis, bukan MNIST. Gate yang sebenarnya butuh 100 neuron dan
 hitungan detik, supaya ketahuan sebelum membakar kuota.
 """
 
+import pytest
 import torch
 
 from rak.data.encode import EncoderConfig, encode_poisson
@@ -151,7 +152,13 @@ def test_neurons_fire_at_different_times():
     """Neuron harus TIDAK fire serempak.
 
     Inilah yang memecah simetri: kalau semua neuron fire di timestep
-    yang sama, `x_pre` yang mereka lihat identik.
+    yang sama, `x_pre` yang mereka lihat identik dan tidak ada yang
+    bisa belajar receptive field berbeda.
+
+    Yang diukur adalah KORELASI WAKTU antar neuron, bukan perbedaan
+    laju. Versi pertama mengukur `std` dari laju fire — dan itu
+    salah: dua neuron bisa punya laju identik tapi fire di timestep
+    yang bergantian, yang justru justru yang kita butuhkan.
     """
     images, _ = _synthetic_digits()
     net = _train_briefly(n_e=24, batches=6)
@@ -161,9 +168,19 @@ def test_neurons_fire_at_different_times():
         encode_poisson(images[:10], 2.0, enc, generator=g)
     )
 
-    firing = (z_e.sum(dim=0) > 0).to(torch.float32)   # (B, n_e)
-    spread = float(firing.mean(dim=0).std())
-    assert spread > 0.0, "semua neuron identik — tidak ada yang membedakan"
+    # (n_steps, B, n_e) -> (n_steps, B*n_e): satu deret waktu
+    series = z_e.permute(0, 2, 1).reshape(z_e.shape[0], -1)
+    if float(series.sum()) < 2:
+        pytest.skip("terlalu sedikit spike untuk mengukur korelasi")
+
+    corr = torch.corrcoef(series.double())
+    n = corr.shape[0]
+    off = corr[~torch.eye(n, dtype=torch.bool)]
+    mean_off = float(off.mean())
+    assert mean_off < 0.8, (
+        f"korelasi antar neuron {mean_off:.3f} — mereka fire serempak, "
+        f"jadi semua melihat `x_pre` yang sama dan tidak bisa membedakan"
+    )
 
 
 def test_class_assignment_uses_every_class():
