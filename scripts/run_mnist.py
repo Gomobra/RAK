@@ -186,6 +186,8 @@ def run(args: argparse.Namespace) -> int:
                 epochs=1,
                 batch_size=min(64, n_smoke),
                 eta=args.eta,
+                inhibition_strength=args.inhibition,
+                rule=args.rule,
                 out_dir=str(out_dir / "smoke"),
                 checkpoint_every=0,
                 log_every=max(64, n_smoke // 8),
@@ -224,6 +226,8 @@ def run(args: argparse.Namespace) -> int:
                 n_in=train_set.n_features,
                 n_e=len(blob["net"]["w_e"][0]),
                 column_sum=args.column_sum,
+                inhibition_strength=args.inhibition,
+                rule=args.rule,
             ),
             stdp_config=Eq3Config(eta=args.eta),
             seed=args.seed,
@@ -249,6 +253,8 @@ def run(args: argparse.Namespace) -> int:
         batch_size=args.batch,
         eta=args.eta,
         seed=args.seed,
+        inhibition_strength=args.inhibition,
+        rule=args.rule,
         out_dir=str(out_dir),
         log_every=args.log_every,
         checkpoint_every=args.checkpoint_every,
@@ -358,6 +364,9 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--epochs", type=int, default=1)
     p.add_argument("--eta", type=float, default=1e-3)
     p.add_argument("--seed", type=int, default=1)
+    p.add_argument("--inhibition", type=float, default=800.0,
+                   help="total konduktansi inhibitor per neuron")
+    p.add_argument("--rule", default="eq3", choices=["eq3", "variant3"])
     p.add_argument("--batch", type=int, default=64)
     p.add_argument("--limit", type=int, default=0,
                    help="0 = pakai seluruh training set")

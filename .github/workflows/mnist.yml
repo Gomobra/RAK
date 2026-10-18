@@ -12,9 +12,17 @@ on:
         required: false
         default: "1"
       eta:
-        description: "Learning rate STDP Eq.3"
+        description: "Learning rate STDP"
         required: false
         default: "1e-3"
+      inhibition:
+        description: "Total konduktansi inhibitor per neuron eksitasi"
+        required: false
+        default: "800"
+      rule:
+        description: "Rule STDP (eq3 atau variant3)"
+        required: false
+        default: "eq3"
       limit:
         description: "Batas presentasi (0 = penuh 60000)"
         required: false
@@ -76,6 +84,8 @@ jobs:
             --epochs ${{ github.event.inputs.epochs || '1' }} \
             --eta ${{ github.event.inputs.eta || '1e-3' }} \
             --limit ${{ github.event.inputs.limit || '0' }} \
+            --inhibition ${{ github.event.inputs.inhibition || '800' }} \
+            --rule ${{ github.event.inputs.rule || 'eq3' }} \
             --gate ${{ github.event.inputs.gate || '0' }} \
             ${{ github.event.inputs.smoke == 'false' && '--no-smoke' || '' }}
 

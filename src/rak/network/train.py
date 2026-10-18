@@ -66,6 +66,14 @@ class TrainConfig:
 
     seed: int = 1
 
+    #: Kekuatan inhibisi lateral. Dengan `scale_inhibition=True`
+    #: (default), ini adalah TOTAL konduktansi inhibitor per neuron
+    #: eksitasi -- konstan terhadap ukuran jaringan.
+    inhibition_strength: float = 800.0
+
+    #: Rule STDP: "variant3" (bentuk acuan) atau "eq3" (rumus paper).
+    rule: str = "eq3"
+
     #: Learning rate STDP Eq.3.
     eta: float = 1e-3
 
@@ -141,7 +149,10 @@ def train(
     out_dir.mkdir(parents=True, exist_ok=True)
 
     net = CompetitiveNetwork(
-        NetworkConfig(n_in=cfg.n_in, n_e=cfg.n_e, column_sum=cfg.column_sum),
+        NetworkConfig(
+            n_in=cfg.n_in, n_e=cfg.n_e, column_sum=cfg.column_sum,
+            inhibition_strength=cfg.inhibition_strength, rule=cfg.rule,
+        ),
         stdp_config=Eq3Config(eta=cfg.eta, dt_ms=enc.dt_ms),
         seed=cfg.seed,
     )
