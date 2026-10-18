@@ -281,15 +281,37 @@ def evaluate(
         labels = labels[:max_samples]
 
     n = int(images.shape[0])
+    if n == 0:
+        raise ValueError(
+            f"evaluate() menerima 0 gambar (max_samples={max_samples}, "
+            f"test set punya {int(data.images.shape[0])}). "
+            f"`0 or None` menghasilkan None, tapi kalau `max_samples` "
+            f"dikirim sebagai 0 eksplisit, `images[:0]` jadi kosong."
+        )
     all_counts = []
-    for start in range(0, n, batch_size):
-        chunk = images[start : start + batch_size]
+    start = 0
+    while start < n:
+        end = min(start + batch_size, n)
         spikes = encode_poisson(
-            chunk, enc.start_intensity, enc, generator=gen
+            images[start:end], enc.start_intensity, enc, generator=gen
         )
         _, counts = net.present_batch(spikes)
         all_counts.append(counts)
+        start = end
     counts = torch.cat(all_counts, dim=0)
+
+    # Diagnostik: kalau jaringan terlalu sunyi, assignment GAGAL
+    # karena neuron yang tidak pernah fire punya laju 0 untuk SEMUA
+    # kelas, dan `better = rate > best` tidak pernah benar -- semua
+    # neuron itu tertinggal di kelas 0.
+    silent = int((counts.sum(dim=0) == 0).sum())
+    if silent:
+        print(
+            f"    [PERINGATAN] {silent}/{counts.shape[1]} neuron tidak "
+            f"pernah fire saat evaluasi. Assignment kelas akan gagal "
+            f"untuk neuron-ger Moral itu.",
+            flush=True,
+        )
 
     if assignments is None:
         raise ValueError(
