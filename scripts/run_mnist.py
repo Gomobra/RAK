@@ -301,7 +301,7 @@ def run(args: argparse.Namespace) -> int:
     result = evaluate(
         net, test_set, encoder=enc, batch_size=args.batch,
         assignments=assignments, seed=args.seed + 2,
-        max_samples=args.test_limit,
+        max_samples=args.test_limit or None,
     )
     acc = accuracy(result)
 
