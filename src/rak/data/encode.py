@@ -81,6 +81,17 @@ class EncoderConfig:
     #: Ambang total spike OUTPUT di bawah ini -> presentasi diulang
     #: dengan intensitas lebih tinggi.
     #:
+    #: Default 25, bukan 5 dari kode acuan. Kode acuan
+    #: presents satu gambar pada satu waktu, jadi "total spike" di sana berarti
+    #: Across the WHOLE population. Di sini batch 64 gambar diproses
+    #: bersamaan dan `per_image` membandingkan per gambar — angka 5
+    #: jadi terlalu kecil untuk menahan gambar yang sunyi, dan
+    #: gambar-gambar itu lolos tanpa pernah diulang. Run 100 neuron
+    #: (inhibisi 400) berakhir dengan 25 spike per presentasi TOTAL
+    #: dengan 0 neuron mati — artinya hampir semua gambar lolos gate
+    #: tanpa diulang, dan jaringan tidak pernah mendapat tekanan untuk
+    #: menyala lebih.
+    #:
     #: PENTING: ini menghitung spike neuron EKSITASI, bukan spike
     #: input. Kode acuan mengukur `spike_counters['Ae']`. Versi
     #: pertama dokumentasi kita menyimpulkannya menghitung spike
@@ -89,7 +100,7 @@ class EncoderConfig:
     #: dalam 350 ms. Threshold-nya jadi tidak akan pernah aktif, dan
     #: mekanisme yang justru mencegah dead network jadi tidak pernah
     #: berjalan.
-    min_spikes: int = 5
+    min_spikes: int = 25
 
     def __post_init__(self) -> None:
         if self.present_ms <= 0:
