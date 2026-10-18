@@ -97,6 +97,12 @@ class NetworkConfig:
     #: menentukan seberapa kuat inhibisi, arahnya sudah pasti.
     inhibition_strength: float = 1.0
 
+    #: Kalau True, bobot I->E dibagi jumlah neuron inhibitor supaya
+    #: total inhibisi per neuron eksitasi konstan terhadap ukuran
+    #: jaringan. Tanpa ini, `inhibition_strength` hanya bermakna untuk
+    #: satu nilai `n_e`.
+    scale_inhibition: bool = True
+
     dt_ms: float = 0.5
 
     def __post_init__(self) -> None:
@@ -205,9 +211,25 @@ class CompetitiveNetwork:
         # sehingga inhibisi berubah jadi depolarisasi. Symptom-nya
         # halus dan sangat menyesatkan: neuron yang di-inhibisi
         # justru lebih mudah fire.
+        # I -> E diskalakan `1/n_e` supaya TOTAL inhibisi per neuron
+        # eksitasi KONSTAN terlepas dari ukuran jaringan.
+        #
+        # Tanpa ini, total inhibisi = strength x (jumlah inhibitor yang
+        # fire), yang ikut tumbuh bersama n_e. Sweep 100 neuron
+        # membuktikan konsekuensinya: ambang yang memecah simetri
+        # bernilai 4 di n_e=40 tapi 8 di n_e=100. Nilai yang sama
+        # menghasilkan jaringan BERBEDA hanya karena ukuran -- itu
+        # tidak bisa dipakai sebagai parameter yang dilaporkan.
+        #
+        # Ini persis `scale_per_neuron` yang sudah ada di
+        # `rak.homeostasis.inhibition` (Phase 2B) tapi tidak dibawa ke
+        # sini. Inkonsistensi yang sama pays off dua kali.
+        if cfg.scale_inhibition:
+            w_ie = cfg.inhibition_strength / max(cfg.n_inhibitory, 1)
+        else:
+            w_ie = cfg.inhibition_strength
         self.w_ie = torch.full(
-            (cfg.n_inhibitory, cfg.n_e), cfg.inhibition_strength,
-            device=self.device,
+            (cfg.n_inhibitory, cfg.n_e), w_ie, device=self.device,
         )
 
         # --- state ------------------------------------------------------
