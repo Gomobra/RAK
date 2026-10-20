@@ -27,6 +27,14 @@ on:
         description: "Batas presentasi (0 = penuh 60000)"
         required: false
         default: "0"
+      assign:
+        description: "Jumlah gambar train untuk assignment kelas (0 = 10000)"
+        required: false
+        default: "0"
+      test:
+        description: "Jumlah gambar test untuk evaluasi (0 = 10000)"
+        required: false
+        default: "0"
       smoke:
         description: "Jalankan smoke test dulu"
         type: boolean

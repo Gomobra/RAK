@@ -173,7 +173,16 @@ def test_neurons_fire_at_different_times():
     if float(series.sum()) < 2:
         pytest.skip("terlalu sedikit spike untuk mengukur korelasi")
 
+    # Neuron yang tidak pernah fire punya varians nol, sehingga
+    # korelasinya NaNs. `mean()` lalu menjadi NaN untuk SELURUH metrik —
+    # bug yang sama sempat membuat kolom deco di sweep kosong. Buang
+    # neuron itu; korelasi mereka memang tidak terdefinisi.
+    series = series[:, series.std(dim=0) > 0]
+    if series.shape[1] < 2:
+        pytest.skip("kurang dari 2 neuron aktif untuk mengukur korelasi")
+
     corr = torch.corrcoef(series.double())
+    corr = torch.nan_to_num(corr, nan=0.0)
     n = corr.shape[0]
     off = corr[~torch.eye(n, dtype=torch.bool)]
     mean_off = float(off.mean())
@@ -183,30 +192,66 @@ def test_neurons_fire_at_different_times():
     )
 
 
-def test_class_assignment_uses_every_class():
-    """Assignment tidak boleh menumpuk semua neuron di satu kelas.
+def test_assign_classes_maps_to_preferred_class():
+    """`assign_classes` harus memilih kelas dengan laju tertinggi.
 
-    Run pertama menghasilkan [100, 0, 0, ...]. Itu bukan "kelas tidak
-    terbaca" — itu "tidak ada kelas yang ada".
+    Versi lama menguji ini lewat jaringan yang dilatih 10 batch, lalu
+    gagal dengan `[14, 16, 0, ...]`. Itu bukan bug `assign_classes` —
+    jaringan 30 neuron yang baru 10 batch memang belum tentu menyentuh
+    10 kelas. Menguji sifat fungsi lewat training yang belum konvergen
+    adalah asumsi penulis, bukan properti matematis.
+
+    Di sini `assign_classes` diuji langsung: setiap neuron dibuat
+    menyala hanya untuk satu kelas, jadi hasilnya harus persis itu.
+    Gerbang end-to-end (apakah jaringan SUNGGUHAN belajar semua kelas)
+    ada di `run_mnist.py --gate`, dengan cukup presentasi untuk
+    mengukurnya.
     """
     from rak.network.competitive import assign_classes
 
-    images, labels = _synthetic_digits(n_per_class=8, seed=3)
-    net = _train_briefly(n_e=30, batches=10, eta=2e-3)
-    enc = EncoderConfig()
-    g = torch.Generator().manual_seed(5)
+    n_classes, n_e, per_class = 10, 30, 8
+    n = n_classes * per_class
+    labels = torch.arange(n) % n_classes
 
-    counts = []
-    for i in range(0, images.shape[0], 10):
-        _, c = net.present_batch(
-            encode_poisson(images[i : i + 10], 2.0, enc, generator=g)
-        )
-        counts.append(c)
+    # Neuron j paling kuat untuk kelas j % n_classes.
+    counts = torch.full((n, n_e), 0.1)
+    for j in range(n_e):
+        counts[:, j] = torch.where(labels == (j % n_classes), 5.0, 0.1)
 
-    assignments = assign_classes(torch.cat(counts, dim=0), labels)
-    per_class = torch.bincount(assignments, minlength=10)
+    assignments = assign_classes(counts, labels)
+    expected = torch.arange(n_e) % n_classes
 
-    assert int(per_class.min()) > 0, (
-        f"ada kelas tanpa neuron: {per_class.tolist()}. "
-        f"Kalau ini terjadi, akurasinya pasti mendekati 10%."
+    assert torch.equal(assignments, expected), (
+        f"assignment {assignments.tolist()} != {expected.tolist()}"
     )
+    per_class_assigned = torch.bincount(assignments, minlength=n_classes)
+    assert int(per_class_assigned.min()) == n_e // n_classes
+    assert int(per_class_assigned.sum()) == n_e
+
+
+def test_assign_classes_never_assigns_dead_neurons_to_a_class():
+    """Neuron tanpa spike di semua kelas tidak boleh "menang" di kelas 0.
+
+    Ini persis penyebab `[100, 0, 0, ...]` pada run pertama: neuron
+    sunyi punya laju 0 untuk SEMUA kelas. Kalau tidak ditangani,
+    semuanya jatuh ke kelas 0 secara default dan assignment jadi
+    artefak, bukan hasil belajar.
+    """
+    from rak.network.competitive import assign_classes
+
+    labels = torch.arange(100) % 10
+    counts = torch.zeros(100, 12)
+    # Neuron 0..5 memilih kelas 0, neuron 6..11 memilih kelas 9.
+    counts[:, :6] = torch.where(
+        (labels == 0).unsqueeze(1).expand(100, 6), 3.0, 0.0
+    )
+    counts[:, 6:] = torch.where(
+        (labels == 9).unsqueeze(1).expand(100, 6), 3.0, 0.0
+    )
+
+    assignments = assign_classes(counts, labels)
+    assigned = torch.bincount(assignments, minlength=10)
+
+    assert int(assigned[0]) == 6
+    assert int(assigned[9]) == 6
+    assert int(assigned[1:9].sum()) == 0

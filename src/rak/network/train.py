@@ -121,6 +121,63 @@ def _batches(n: int, size: int, generator: torch.Generator):
         yield order[start : start + size]
 
 
+def present_adaptive(
+    net: CompetitiveNetwork,
+    images: Tensor,
+    enc: EncoderConfig,
+    gen: torch.Generator,
+    *,
+    max_repeat: int = 10,
+) -> tuple[Tensor, Tensor]:
+    """Presentasi dengan intensitas adaptif per-gambar (Diehl & Cook).
+
+    Gambar yang menghasilkan < `enc.min_spikes` dipresentasikan ULANG
+    dengan intensitas +1. Spike dari semua pengulangan DIJUMLAHKAN.
+
+    Kenapa ini harus dipakai di training DAN evaluasi:
+
+    Sebelumnya `train()` menaikkan intensitas sampai gambar menghasilkan
+    >= 25 spike, lalu `evaluate()` menyajikan gambar yang sama pada
+    `start_intensity` saja. Jaringan jadi melihat input jauh lebih
+    lemah saat dievaluasi daripada saat dilatih. Hasilnya, dari
+    run 100 neuron: **98/100 neuron tidak fire sama sekali** saat
+    evaluasi, dan akurasi 9.74% (setara tebakan).
+
+    Itu bukan jaringan mati -- itu dua jalur kode yang tidak sinkron.
+    Sekarang keduanya memakai fungsi ini.
+
+    Args:
+        images: (B, n_in) gambar ternormalisasi.
+        max_repeat: batas eskalasi per gambar.
+
+    Returns:
+        (counts, intensity): `counts` (B, n_e) jumlah spike lintas
+        pengulangan; `intensity` (B,) intensitas terakhir tiap gambar.
+    """
+    n = int(images.shape[0])
+    total = torch.zeros(n, int(net.config.n_e))
+    intensity = torch.full((n,), float(enc.start_intensity))
+    if n == 0:
+        return total, intensity
+
+    pending = torch.arange(n)
+    for rep in range(max_repeat + 1):
+        if pending.numel() == 0:
+            break
+        ctrl = AdaptiveIntensity(enc)
+        for _ in range(rep):
+            ctrl.escalate()
+        spikes = encode_poisson(
+            images[pending], ctrl.intensity, enc, generator=gen
+        )
+        _, counts = net.present_batch(spikes)
+        total[pending] += counts
+        intensity[pending] = ctrl.intensity
+        pending = pending[total[pending].sum(dim=1) < enc.min_spikes]
+
+    return total, intensity
+
+
 def train(
     data: MnistSplit,
     config: TrainConfig | None = None,
@@ -170,30 +227,14 @@ def train(
         for idx in _batches(n_samples, cfg.batch_size, gen):
             batch = images[idx]
 
-            # --- presentasi pertama --------------------------------
-            ctrl = AdaptiveIntensity(enc)
-            spikes = encode_poisson(
-                batch, ctrl.intensity, enc, generator=gen
+            # --- presentasi adaptif --------------------------------
+            # Versi lama mengganti `per_image[need]` dengan hitungan
+            # pengulangan TERAKHIR, bukan menjumlahkan. Spike dari
+            # presentasi pertama hilang dari statistik.
+            counts, _ = present_adaptive(
+                net, batch, enc, gen, max_repeat=cfg.max_repeat
             )
-            _, counts = net.present_batch(spikes)
-
             per_image = counts.sum(dim=1)
-
-            # --- pengulangan untuk gambar yang terlalu sepi --------
-            for rep in range(cfg.max_repeat):
-                need = per_image < enc.min_spikes
-                n_need = int(need.sum())
-                if n_need == 0:
-                    break
-                sub = batch[need]
-                ctrl = AdaptiveIntensity(enc)
-                for _ in range(rep + 1):
-                    ctrl.escalate()
-                spikes = encode_poisson(
-                    sub, ctrl.intensity, enc, generator=gen
-                )
-                _, sub_counts = net.present_batch(spikes)
-                per_image[need] = sub_counts.sum(dim=1)
 
             fire_counts += (counts > 0).any(dim=0).to(torch.float32)
             spike_acc += float(per_image.sum())
@@ -289,27 +330,34 @@ def evaluate(
             f"dikirim sebagai 0 eksplisit, `images[:0]` jadi kosong."
         )
     all_counts = []
+    all_intensity = []
     start = 0
     while start < n:
         end = min(start + batch_size, n)
-        spikes = encode_poisson(
-            images[start:end], enc.start_intensity, enc, generator=gen
-        )
-        _, counts = net.present_batch(spikes)
+        # WAJIB sama dengan training: intensitas adaptif, bukan
+        # `start_intensity` sekali. Lihat `present_adaptive`.
+        counts, intensity = present_adaptive(net, images[start:end], enc, gen)
         all_counts.append(counts)
+        all_intensity.append(intensity)
         start = end
     counts = torch.cat(all_counts, dim=0)
+    used_intensity = torch.cat(all_intensity, dim=0)
 
     # Diagnostik: kalau jaringan terlalu sunyi, assignment GAGAL
     # karena neuron yang tidak pernah fire punya laju 0 untuk SEMUA
     # kelas, dan `better = rate > best` tidak pernah benar -- semua
     # neuron itu tertinggal di kelas 0.
     silent = int((counts.sum(dim=0) == 0).sum())
+    print(
+        f"    intensitas rata-rata {float(used_intensity.mean()):.1f} "
+        f"(maks {float(used_intensity.max()):.0f}), "
+        f"spike/gambar {float(counts.sum(dim=1).mean()):.1f}",
+        flush=True,
+    )
     if silent:
         print(
             f"    [PERINGATAN] {silent}/{counts.shape[1]} neuron tidak "
-            f"pernah fire saat evaluasi. Assignment kelas akan gagal "
-            f"untuk neuron-ger Moral itu.",
+            f"pernah fire saat evaluasi.",
             flush=True,
         )
 
