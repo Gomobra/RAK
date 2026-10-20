@@ -34,6 +34,7 @@ import torch
 from rak.data.encode import EncoderConfig, encode_poisson
 from rak.data.mnist import load_mnist
 from rak.network import CompetitiveNetwork, NetworkConfig, assign_classes
+from rak.network.train import present_adaptive
 from rak.learning.stdp3 import Eq3Config
 from rak.network.train import TrainConfig, accuracy, evaluate, train
 
@@ -92,11 +93,11 @@ def _evaluate_only(args, net, train_set, test_set, enc, saved_assignments):
         start = 0
         while start < n_assign:
             end = min(start + args.batch, n_assign)
-            _, c = net.present_batch(
-                encode_poisson(
-                    train_set.images[start:end],
-                    enc.start_intensity, enc, generator=gen,
-                )
+            # SAMA dengan training: intensitas adaptif. Tanpa ini,
+            # assignment dihitung dari neuron yang tidak menyala --
+            # persis bug yang membuat run sebelumnya 9.74%.
+            c, _ = present_adaptive(
+                net, train_set.images[start:end], enc, gen
             )
             chunks.append(c)
             start = end

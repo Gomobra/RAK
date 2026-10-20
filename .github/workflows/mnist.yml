@@ -35,6 +35,10 @@ on:
         description: "Jumlah gambar test untuk evaluasi (0 = 10000)"
         required: false
         default: "0"
+      resume_run:
+        description: "Run ID yang checkpoint-nya mau dievaluasi (kosong = training baru)"
+        required: false
+        default: ""
       smoke:
         description: "Jalankan smoke test dulu"
         type: boolean
@@ -48,6 +52,10 @@ on:
 # Versi pertama punya `on: push`, dan setiap commit ke path src/rak/
 # langsung menyalakan run 3 jam tanpa diminta. Sekarang hanya jalan
 # kalau diminta.
+
+permissions:
+  actions: read
+  contents: write
 
 concurrency:
   group: mnist-${{ github.ref }}
@@ -85,8 +93,30 @@ jobs:
           path: data/mnist
           key: mnist-v1
 
-      - name: Train + evaluate
+      - name: Ambil checkpoint dari run sebelumnya
+        if: ${{ github.event.inputs.resume_run != '' }}
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
+          gh run download ${{ github.event.inputs.resume_run }} -D runs/resume
+          find runs/resume -name checkpoint.pt -o -name weights.pt
+
+      - name: Train + evaluate
+        env:
+          RESUME_RUN: ${{ github.event.inputs.resume_run }}
+        run: |
+          RESUME_ARG=""
+          if [ -n "$RESUME_RUN" ]; then
+            CKPT=$(find runs/resume -name checkpoint.pt | head -1)
+            WEIGHTS=$(find runs/resume -name weights.pt | head -1)
+            if [ -n "$CKPT" ]; then
+              RESUME_ARG="--resume $CKPT"
+            elif [ -n "$WEIGHTS" ]; then
+              RESUME_ARG="--resume $WEIGHTS"
+            fi
+            echo "resume arg: $RESUME_ARG"
+          fi
+
           python scripts/run_mnist.py \
             --neurons ${{ github.event.inputs.neurons || '100' }} \
             --epochs ${{ github.event.inputs.epochs || '1' }} \
@@ -94,7 +124,10 @@ jobs:
             --limit ${{ github.event.inputs.limit || '0' }} \
             --inhibition ${{ github.event.inputs.inhibition || '800' }} \
             --rule ${{ github.event.inputs.rule || 'eq3' }} \
+            --assign-samples ${{ github.event.inputs.assign || '0' }} \
+            --test-limit ${{ github.event.inputs.test || '0' }} \
             --gate ${{ github.event.inputs.gate || '0' }} \
+            $RESUME_ARG \
             ${{ github.event.inputs.smoke == 'false' && '--no-smoke' || '' }}
 
       - name: Upload weights
