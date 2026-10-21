@@ -203,12 +203,19 @@ def variant3_step(
         #
         # Menjumlahkan per sampel = sama dengan memproses gambar satu
         # per satu (urutan berbeda, total sama).
-        dw = (
-            cfg.nu_post
-            * torch.einsum("bi,bj->bij", pre_d, post2_d)
-            * fired.to(pre_d.dtype).unsqueeze(1)
-            - cfg.nu_pre * torch.einsum("bi,bj->bij", z_pre, post1_d)
-        ).sum(dim=0)
+        # Jumlah outer product = SATU matmul:
+        #
+        #   sum_b pre_b[i] * post2_b[j] * fired_b[j]
+        #     = pre^T @ (post2 * fired)
+        #
+        # Bentuk einsum "bi,bj->bij" lalu .sum(0) memang benar, tapi
+        # membentuk tensor (B, n_in, n_out) 20 MB di SETIAP timestep
+        # (700 per presentasi). Run dengan bentuk itu belum selesai
+        # setelah 2 jam 19 menit. Matmul di bawah ini hasilnya
+        # identik dan tidak pernah membentuk tensor 3D.
+        ltp = pre_d.T @ (post2_d * fired.to(pre_d.dtype))
+        ltd = z_pre.T @ post1_d
+        dw = cfg.nu_post * ltp - cfg.nu_pre * ltd
 
     w_new = (w + dw).clamp(cfg.w_min, cfg.w_max)
 
