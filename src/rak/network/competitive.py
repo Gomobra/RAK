@@ -271,10 +271,19 @@ class CompetitiveNetwork:
         shape = (batch_size, self.config.n_e)
         self.state_e = self.exc.init_state(shape)
         self.state_i = self.inh.init_state((batch_size, self.config.n_inhibitory))
-        self.theta_batch = torch.full(
-            (batch_size, self.config.n_e),
-            self.config.theta_init,
-            device=self.device,
+        # Lanjutkan dari theta yang SUDAH dipelajari, bukan dari
+        # theta_init.
+        #
+        # Versi lama selalu mulai dari theta_init (20.0), lalu di akhir
+        # presentasi `theta` ditimpa dengan rata-rata lintasan itu.
+        # Akibatnya theta tidak pernah terakumulasi antar presentasi
+        # dan selalu kembali ke 20.0 -- nilai yang teramati di run
+        # 100 neuron (theta 20.0 +- 0.7 = theta_offset). Homeostasis
+        # jadi tidak pernah bekerja.
+        self.theta_batch = (
+            self.theta.unsqueeze(0)
+            .expand(batch_size, self.config.n_e)
+            .clone()
         )
         # Trace STDP juga di-reset per presentasi.
         #
@@ -371,6 +380,12 @@ class CompetitiveNetwork:
             self.theta_batch.sum(dim=0)
             - float(batch - 1) * gamma_total * self.theta
         )
+        if not bool(torch.isfinite(self.theta).all()):
+            raise FloatingPointError(
+                "theta menjadi tidak hingga. Ini berarti update "
+                "homeostasis meledak, bukan sekadar nilai besar: "
+                "periksa inisialisasi theta_batch terhadap self.theta."
+            )
 
         # Normalisasi kolom SETIAP presentasi — Diehl-Cook memanggilnya
         # di dalam loop, bukan per epoch.
