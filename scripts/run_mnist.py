@@ -97,7 +97,7 @@ def _evaluate_only(args, net, train_set, test_set, enc, saved_assignments):
             # assignment dihitung dari neuron yang tidak menyala --
             # persis bug yang membuat run sebelumnya 9.74%.
             c, _ = present_adaptive(
-                net, train_set.images[start:end], enc, gen
+                net, train_set.images[start:end], enc, gen, learn=False
             )
             chunks.append(c)
             start = end

@@ -128,6 +128,7 @@ def present_adaptive(
     gen: torch.Generator,
     *,
     max_repeat: int = 10,
+    learn: bool = True,
 ) -> tuple[Tensor, Tensor]:
     """Presentasi dengan intensitas adaptif per-gambar (Diehl & Cook).
 
@@ -170,7 +171,7 @@ def present_adaptive(
         spikes = encode_poisson(
             images[pending], ctrl.intensity, enc, generator=gen
         )
-        _, counts = net.present_batch(spikes)
+        _, counts = net.present_batch(spikes, learn=learn)
         total[pending] += counts
         intensity[pending] = ctrl.intensity
         pending = pending[total[pending].sum(dim=1) < enc.min_spikes]
@@ -336,7 +337,9 @@ def evaluate(
         end = min(start + batch_size, n)
         # WAJIB sama dengan training: intensitas adaptif, bukan
         # `start_intensity` sekali. Lihat `present_adaptive`.
-        counts, intensity = present_adaptive(net, images[start:end], enc, gen)
+        counts, intensity = present_adaptive(
+            net, images[start:end], enc, gen, learn=False
+        )
         all_counts.append(counts)
         all_intensity.append(intensity)
         start = end

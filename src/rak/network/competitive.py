@@ -307,7 +307,9 @@ class CompetitiveNetwork:
             )
 
     # ------------------------------------------------------------------
-    def present_batch(self, z_pre: Tensor) -> tuple[Tensor, Tensor]:
+    def present_batch(
+        self, z_pre: Tensor, *, learn: bool = True
+    ) -> tuple[Tensor, Tensor]:
         """Jalankan satu batch presentasi.
 
         Args:
@@ -346,8 +348,12 @@ class CompetitiveNetwork:
 
             z_i, self.state_i = self.inh.step(z_e @ self.w_ei, zero_i, self.state_i)
 
-            # STDP hanya pada synapse input -> eksitasi
-            if self.rule == "variant3":
+            # STDP hanya pada synapse input -> eksitasi.
+            # `learn=False` membekukan bobot: evaluasi TIDAK boleh
+            # mengubah model yang sedang diukur.
+            if not learn:
+                pass
+            elif self.rule == "variant3":
                 self.w_e, self.stdp_state = variant3_step(
                     zp, z_e, self.w_e, self.stdp_state, self.v3_config
                 )
@@ -356,8 +362,16 @@ class CompetitiveNetwork:
                     zp, z_e, self.w_e, self.stdp_state, self.stdp_config
                 )
 
-            # adaptive threshold neuron eksitasi saja
-            self.theta_batch = gamma_theta * self.theta_batch + cfg.theta_plus * z_e
+            # adaptive threshold neuron eksitasi saja.
+            # Saat evaluasi theta juga dibekukan (test_mode di kode
+            # acuan). Tanpa ini, setiap pengulangan intensitas ikut
+            # menaikkan theta, jaringan jadi makin sulit menyala, dan
+            # gambar yang diulang 8x akhirnya jadi input hampir
+            # seragam -- informasi kelasnya hilang.
+            if learn:
+                self.theta_batch = (
+                    gamma_theta * self.theta_batch + cfg.theta_plus * z_e
+                )
 
             self.z_i_prev = z_i
             z_e_hist[t] = z_e
@@ -375,11 +389,12 @@ class CompetitiveNetwork:
         # Yang benar: decay sekali, increment DIJUMLAHKAN. Bentuk
         # eksaknya di bawah, karena `theta_batch.sum(0)` masih
         # mengandung B salinan suku decay.
-        gamma_total = gamma_theta ** float(n_steps)
-        self.theta = (
-            self.theta_batch.sum(dim=0)
-            - float(batch - 1) * gamma_total * self.theta
-        )
+        if learn:
+            gamma_total = gamma_theta ** float(n_steps)
+            self.theta = (
+                self.theta_batch.sum(dim=0)
+                - float(batch - 1) * gamma_total * self.theta
+            )
         if not bool(torch.isfinite(self.theta).all()):
             raise FloatingPointError(
                 "theta menjadi tidak hingga. Ini berarti update "
@@ -394,7 +409,10 @@ class CompetitiveNetwork:
         # benar-benar konstan, soft lalu untuk meratakan sisa.
         scale = ScalingConfig(target_sum=cfg.column_sum,
                               soft_power=cfg.soft_power)
-        self.w_e = hard_normalize(hard_normalize(self.w_e, scale), scale)
+        if learn:
+            self.w_e = hard_normalize(
+                hard_normalize(self.w_e, scale), scale
+            )
 
         self.n_presentations += 1
         return z_e_hist, counts
