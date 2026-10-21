@@ -301,7 +301,10 @@ def eq3_step(
         # learning rate 64 kali lebih besar daripada batch 1 — jaringan
         # akan saturasi di epoch pertama dan tidak ada yang mengira
         # itu bug.
-        dw = dw_batch.mean(dim=0)                        # (n_in, n_out)
+        # SUM, bukan mean. `mean` membagi update dengan ukuran batch,
+        # sehingga satu epoch 60.000 gambar hanya setara ~15 gambar
+        # pembelajaran. Menjumlahkan = memproses gambar satu per satu.
+        dw = dw_batch.sum(dim=0)                         # (n_in, n_out)
 
     w_new = (w + dw).clamp(cfg.w_min, cfg.w_max)
 

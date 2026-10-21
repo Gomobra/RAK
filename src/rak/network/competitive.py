@@ -354,8 +354,23 @@ class CompetitiveNetwork:
             z_e_hist[t] = z_e
             counts += z_e
 
-        # theta lintas presentasi: rata-rata batch
-        self.theta = self.theta_batch.mean(dim=0)
+        # theta lintas presentasi.
+        #
+        # `theta_batch` berisi B lintasan independen yang SEMUANYA
+        # mulai dari `self.theta` dan meluruh dengan faktor yang sama
+        # `gamma_theta ** n_steps`. Rata-rata batch membagi increment
+        # dengan B, sehingga homeostasis 64x terlalu lemah -- itu
+        # sebabnya theta di run sebelumnya mentok di 20.0 (=
+        # theta_offset) untuk hampir semua neuron.
+        #
+        # Yang benar: decay sekali, increment DIJUMLAHKAN. Bentuk
+        # eksaknya di bawah, karena `theta_batch.sum(0)` masih
+        # mengandung B salinan suku decay.
+        gamma_total = gamma_theta ** float(n_steps)
+        self.theta = (
+            self.theta_batch.sum(dim=0)
+            - float(batch - 1) * gamma_total * self.theta
+        )
 
         # Normalisasi kolom SETIAP presentasi — Diehl-Cook memanggilnya
         # di dalam loop, bukan per epoch.

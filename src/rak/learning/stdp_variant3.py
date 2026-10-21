@@ -185,16 +185,30 @@ def variant3_step(
         #
         # `w` dipakai BERSAMA seluruh batch; dijumlahkan akan memberi
         # learning rate B kali lebih besar.
-        mean_pre = (pre_d * cfg.nu_post).mean(dim=0)      # (n_in,)
-        mean_post2 = post2_d.mean(dim=0)                  # (n_out,)
-        mean_zpre = z_pre.mean(dim=0) * cfg.nu_pre        # (n_in,)
-        mean_post1 = post1_d.mean(dim=0)                  # (n_out,)
-        mean_fired = fired.to(torch.float32).mean(dim=0)  # (n_out,)
-
+        # Outer product PER SAMPEL, lalu DIJUMLAHKAN.
+        #
+        # Dua kesalahan sebelumnya, keduanya mematikan pembelajaran:
+        #
+        # 1. `torch.outer(mean_pre, mean_post2)` menghitung
+        #    E[pre] * E[post2]. Itu BUKAN E[pre * post2]. Produk dari
+        #    rata-rata membuang justru sinyal yang dicari STDP:
+        #    koinsidensi antara trace pre yang tinggi dan spike post.
+        #    Setelah dirata-ratakan lebih dulu, korelasi antar gambar
+        #    hilang dan yang tersisa hanya rata-rata populasi.
+        #
+        # 2. `.mean(dim=0)` membagi update dengan ukuran batch. Satu
+        #    epoch 60.000 gambar jadi setara ~15 gambar pembelajaran,
+        #    bukan 60.000. Bobot yang keluar dari run sebelumnya
+        #    memang nyaris tidak berubah dari inisialisasi seragam.
+        #
+        # Menjumlahkan per sampel = sama dengan memproses gambar satu
+        # per satu (urutan berbeda, total sama).
         dw = (
-            torch.outer(mean_pre, mean_post2) * mean_fired.unsqueeze(0)
-            - torch.outer(mean_zpre, mean_post1)
-        )
+            cfg.nu_post
+            * torch.einsum("bi,bj->bij", pre_d, post2_d)
+            * fired.to(pre_d.dtype).unsqueeze(1)
+            - cfg.nu_pre * torch.einsum("bi,bj->bij", z_pre, post1_d)
+        ).sum(dim=0)
 
     w_new = (w + dw).clamp(cfg.w_min, cfg.w_max)
 
