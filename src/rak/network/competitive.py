@@ -77,7 +77,22 @@ class NetworkConfig:
 
     #: Adaptive threshold neuron eksitasi.
     #: `theta += theta_plus` tiap spike, meluruh dengan `tau_theta_ms`.
-    theta_plus: float = 0.05
+    #: Kenaikan theta per spike.
+    #:
+    #: Acuan memakai 0.05, tapi equilibrium-nya
+    #: `theta_eq = theta_plus * r * tau_theta`. Acuan berjalan pada
+    #: r ~ 0.04 Hz (5 spike per 400 neuron per gambar), sehingga
+    #: theta_eq ~ 20 mV. Jaringan kita berjalan pada r ~ 0.2 Hz,
+    #: sehingga 0.05 memberi theta_eq ~ 108 mV -- dan run terakhir
+    #: memang mengukur theta 32..115. Theta setinggi itu memaksa
+    #: evaluasi memakai intensitas 10-12, yang membuat input nyaris
+    #: seragam dan menghapus informasi bentuk.
+    #:
+    #: 0.0125 menaruh equilibrium di ~25 mV untuk laju kita. Ini
+    #: menyimpang dari angka acuan, tapi menjaga INVARIAN-nya
+    #: (theta_eq dekat theta_offset), yang jauh lebih penting
+    #: daripada menyalin konstanta pada rezim laju yang berbeda.
+    theta_plus: float = 0.0125
     tau_theta_ms: float = 10_000_000.0   # 1e7 ms ~ 2.8 jam
     #: `v_th_eff = theta - theta_offset + v_th` (Diehl-Cook: 20 mV).
     theta_offset: float = 20.0
