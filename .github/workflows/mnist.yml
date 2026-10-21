@@ -22,7 +22,7 @@ on:
       rule:
         description: "Rule STDP (eq3 atau variant3)"
         required: false
-        default: "eq3"
+        default: "variant3"
       limit:
         description: "Batas presentasi (0 = penuh 60000)"
         required: false
@@ -123,7 +123,7 @@ jobs:
             --eta ${{ github.event.inputs.eta || '1e-3' }} \
             --limit ${{ github.event.inputs.limit || '0' }} \
             --inhibition ${{ github.event.inputs.inhibition || '800' }} \
-            --rule ${{ github.event.inputs.rule || 'eq3' }} \
+            --rule ${{ github.event.inputs.rule || 'variant3' }} \
             --assign-samples ${{ github.event.inputs.assign || '0' }} \
             --test-limit ${{ github.event.inputs.test || '0' }} \
             --gate ${{ github.event.inputs.gate || '0' }} \

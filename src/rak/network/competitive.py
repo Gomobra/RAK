@@ -89,8 +89,12 @@ class NetworkConfig:
     #:              (aktivitas postsinaptik baru saja).
     #: "eq3"      = rumus utama paper, tanpa jejak postsinaptik.
     #:
-    #: Default "variant3" karena Eq. 3 terbukti menyatukan semua kolom
-    #: neuron (korelasi 0.94) dan menghasilkan akurasi ~10%.
+    #: Default "variant3" (bentuk kode acuan). Eq. 3 dipertahankan
+    #: sebagai pembanding, TAPI ia punya titik tetap seragam:
+    #: dw = eta*(x_pre - x_tar) menjadi nol saat x_pre = x_tar, dan
+    #: itulah bobot yang benar-benar keluar dari run 100 neuron --
+    #: mean 0.0995 = 78/784, yaitu seragam. Tanpa struktur bobot,
+    #: akurasi mentok di 11.7%.
     rule: str = "variant3"
 
     #: Bobot inhibisi lateral. `w_ie` selalu negatif: besarannya yang

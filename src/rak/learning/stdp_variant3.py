@@ -159,7 +159,11 @@ def variant3_step(
     post2_d = cfg.gamma_post2 * state.post2.expand(z_post.shape)
 
     fired = z_post > 0
-    if not bool(fired.any()):
+    # JANGAN keluar lebih awal hanya karena tidak ada spike post.
+    # Suku LTD dipicu spike PRE, jadi ia harus tetap jalan. Versi
+    # pertama keluar di sini dan diam-diam menghapus seluruh LTD
+    # pada timestep yang hanya punya spike presinaptik.
+    if not bool(fired.any()) and not bool((z_pre > 0).any()):
         return w, Variant3State(pre=pre_d + z_pre,
                                 post1=post1_d + z_post,
                                 post2=post2_d + z_post)

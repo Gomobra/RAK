@@ -63,7 +63,7 @@ class EncoderConfig:
     #: "istirahat" — membran dan conductance harus sempat meluruh,
     #: kalau tidak, jejak dari gambar sebelumnya masih hidup saat
     #: gambar berikutnya mulai dan STDP melihat CREDIT yang salah.
-    rest_ms: float = 150.0
+    rest_ms: float = 0.0
 
     dt_ms: float = 0.5
 
@@ -100,7 +100,7 @@ class EncoderConfig:
     #: dalam 350 ms. Threshold-nya jadi tidak akan pernah aktif, dan
     #: mekanisme yang justru mencegah dead network jadi tidak pernah
     #: berjalan.
-    min_spikes: int = 25
+    min_spikes: int = 5
 
     def __post_init__(self) -> None:
         if self.present_ms <= 0:

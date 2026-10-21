@@ -72,7 +72,7 @@ class TrainConfig:
     inhibition_strength: float = 800.0
 
     #: Rule STDP: "variant3" (bentuk acuan) atau "eq3" (rumus paper).
-    rule: str = "eq3"
+    rule: str = "variant3"
 
     #: Learning rate STDP Eq.3.
     eta: float = 1e-3

@@ -367,7 +367,7 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--seed", type=int, default=1)
     p.add_argument("--inhibition", type=float, default=800.0,
                    help="total konduktansi inhibitor per neuron")
-    p.add_argument("--rule", default="eq3", choices=["eq3", "variant3"])
+    p.add_argument("--rule", default="variant3", choices=["eq3", "variant3"])
     p.add_argument("--batch", type=int, default=64)
     p.add_argument("--limit", type=int, default=0,
                    help="0 = pakai seluruh training set")
