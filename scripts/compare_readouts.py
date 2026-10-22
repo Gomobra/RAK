@@ -55,7 +55,7 @@ def _counts(
 
 def _class_stats(
     counts: torch.Tensor, labels: torch.Tensor, n_classes: int = 10
-) -> tuple[torch.Tensor, torch.Tensor]:
+) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
     """Kembalikan (assignments, purity) dari data kalibrasi.
 
     `purity[j] = rate_kelas_terpilih[j] - rate_kelas_lain_tertinggi[j]`.
@@ -78,7 +78,7 @@ def _class_stats(
         assignments = torch.where(
             better, torch.full_like(assignments, c), assignments
         )
-    return assignments, (best - second).clamp_min(0.0)
+    return assignments, (best - second).clamp_min(0.0), rates
 
 
 def _predict(
@@ -86,11 +86,28 @@ def _predict(
     assignments: torch.Tensor,
     weights: torch.Tensor | None,
     kind: str,
+    rates: torch.Tensor | None = None,
     n_classes: int = 10,
     topk: int = 3,
 ) -> torch.Tensor:
     counts = counts.to(torch.float64)
     totals = torch.zeros(counts.shape[0], n_classes, dtype=torch.float64)
+
+    # --- matched filter: pakai SELURUH profil laju, bukan assignment
+    # keras. Neuron yang mirip 4 dan 9 tetap menyumbang ke keduanya
+    # dengan bobot berbeda; assignment keras membuang informasi itu.
+    if kind in ("matched", "matched_cos"):
+        assert rates is not None
+        r = rates.to(torch.float64)
+        if kind == "matched_cos":
+            # z-score per gambar: hilangkan perbedaan intensitas total,
+            # sisakan POLA neuron mana yang aktif.
+            c = counts - counts.mean(dim=1, keepdim=True)
+            c = c / c.std(dim=1, keepdim=True).clamp_min(1e-9)
+            r = r - r.mean(dim=1, keepdim=True)
+            r = r / r.std(dim=1, keepdim=True).clamp_min(1e-9)
+            return (c @ r.T).argmax(dim=1)
+        return (counts @ r.T).argmax(dim=1)
     for c in range(n_classes):
         members = assignments == c
         n = int(members.sum())
@@ -159,12 +176,15 @@ def main(argv: list[str] | None = None) -> int:
     split = n_tr // 2
     cal_counts, cal_labels = tr_counts[:split], tr_labels[:split]
     val_counts, val_labels = tr_counts[split:], tr_labels[split:]
-    assignments, purity = _class_stats(cal_counts, cal_labels)
+    assignments, purity, rates = _class_stats(cal_counts, cal_labels)
 
     rows = {}
-    for kind in ("mean", "max", "margin", "topk", "binary"):
-        pred_val = _predict(val_counts, assignments, purity, kind)
-        pred_te = _predict(te_counts, assignments, purity, kind)
+    for kind in (
+        "mean", "max", "margin", "topk", "binary",
+        "matched", "matched_cos",
+    ):
+        pred_val = _predict(val_counts, assignments, purity, kind, rates)
+        pred_te = _predict(te_counts, assignments, purity, kind, rates)
         rows[kind] = {
             "val": round(_accuracy(pred_val, val_labels), 2),
             "test": round(_accuracy(pred_te, te_labels), 2),
