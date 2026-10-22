@@ -53,6 +53,9 @@ jobs:
 
       - name: Bandingkan readout
         run: |
+          # Tanpa pipefail, `python ... | tee` mengembalikan status tee
+          # (selalu 0) dan crash Python lolos sebagai job hijau.
+          set -o pipefail
           W=$(find runs/readouts -name weights.pt -not -path "*smoke*" | head -1)
           python scripts/compare_readouts.py \
             --weights "$W" \
