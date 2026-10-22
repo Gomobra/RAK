@@ -198,7 +198,29 @@ tidak ada fitur, tapi karena sebagian neuron tidak terpakai.
 | 400n, 1 epoch, sesudah A+B | **44.40%** | 2.0 | min 16/kelas |
 | 400n, 3 epoch, readout mean | 45.94% | 2.0 | min 10/kelas |
 | 400n, 3 epoch, readout topk | 53.06% | 2.0 | min 11/kelas |
-| 400n, 3 epoch, readout matched_cosz | **61.59%** | 2.0 | min 11/kelas |
+| 400n, 3 epoch, readout matched_cosz | 61.59% | 2.0 | min 11/kelas |
+| 400n, 1 epoch, theta_max=80 | **62.76%** | 2.0 | min 21/kelas |
+| 400n, 3 epoch, theta_max=80 | 59.82% | 2.0 | min 14/kelas |
+
+## theta_max: plafon yang mengikat
+
+Dengan `theta_max=40`, 31% neuron menempel di plafon. Homeostasis
+tidak bisa menekan pemenang lagi, jadi neuron yang sudah kuat terus
+menang dan neuron di ekor tidak pernah belajar (pola checkerboard di
+gambar receptive field).
+
+Menaikkan `theta_max` ke 80:
+
+- spike/presentasi turun 50.4 -> 32.2 (lebih dekat ke acuan),
+- assignment jauh lebih merata: `[85,85,37,36,33,28,28,25,22,21]`
+  versus `[115,51,50,...]`,
+- recall kelas 5 naik 25.0% -> 50.7%,
+- akurasi 1 epoch **62.76%** (mengalahkan 3 epoch theta_max=40).
+
+Tetapi 3 epoch dengan `theta_max=80` justru turun ke 59.82%: theta
+terus naik, laju turun ke 22.6 spike/presentasi, dan sebagian kelas
+kehilangan neuron (kelas 9 hanya 14). Jadi 1 epoch adalah titik
+terbaik yang terukur; menambah epoch tidak otomatis menambah akurasi.
 
 ## Konsekuensi
 
