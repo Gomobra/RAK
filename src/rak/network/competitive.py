@@ -591,19 +591,14 @@ def classify_matched(
     if counts.dim() != 1:
         raise ValueError("classify_matched() menerima satu gambar (n_e,).")
     r = prototypes.to(torch.float64)
-    # Pusatkan per NEURON (kolom), bukan per kelas (baris).
-    #
-    # Neuron yang laju rata-ratanya sama untuk semua kelas -- blob
-    # yang merespons semua digit -- harus mendapat bobot NOL di semua
-    # kelas. Itu hanya benar kalau rata-rata diambil sepanjang kelas
-    # untuk tiap neuron. Memusatkan per baris justru memberi neuron
-    # seperti itu bobot bukan-nol.
-    r = r - r.mean(dim=0, keepdim=True)
-    # Normalisasi tiap baris: tiap kelas jadi vektor satuan, jadi
-    # kelas dengan lebih banyak neuron tidak menang karena normanya
-    # lebih besar.
-    r = r / r.norm(dim=1, keepdim=True).clamp_min(1e-9)
-    return (counts.unsqueeze(0) @ r.T).argmax(dim=1).squeeze(0)
+    # z-score per gambar: buang perbedaan intensitas total, sisakan
+    # POLA neuron mana yang aktif. Ini yang menang di validasi.
+    c = counts - counts.mean()
+    c = c / c.std().clamp_min(1e-9)
+    # Prototipe: pusatkan per kelas (baris) lalu z-score per baris.
+    r = r - r.mean(dim=1, keepdim=True)
+    r = r / r.std(dim=1, keepdim=True).clamp_min(1e-9)
+    return (c.unsqueeze(0) @ r.T).argmax(dim=1).squeeze(0)
 
 
 def classify(

@@ -60,14 +60,27 @@ def test_matched_is_invariant_to_global_scale() -> None:
     assert a == b
 
 
-def test_non_selective_neuron_adds_nothing() -> None:
-    """Neuron yang sama kuat di semua kelas hilang setelah z-score."""
+def test_class_with_flat_profile_has_zero_score() -> None:
+    """Kelas yang laju-nya sama di semua neuron tidak punya arah.
+
+    Setelah z-score per baris, prototipe seperti itu nol, jadi skornya
+    nol berapa pun inputnya. Itu yang mencegah kelas "blob" menang.
+    """
     prototypes = torch.zeros(2, 3, dtype=torch.float64)
-    prototypes[0] = torch.tensor([5.0, 0.0, 5.0])   # neuron 2 netral
-    prototypes[1] = torch.tensor([0.0, 5.0, 5.0])   # neuron 2 netral
-    x0 = torch.tensor([9.0, 0.0, 3.0])
-    x1 = torch.tensor([0.0, 9.0, 3.0])
-    assert int(classify_matched(x0, prototypes)) == 0
-    assert int(classify_matched(x1, prototypes)) == 1
-    # Menambah spike di neuron netral tidak mengubah keputusan.
-    assert int(classify_matched(x0 + torch.tensor([0.0, 0.0, 100.0]), prototypes)) == 0
+    prototypes[0] = torch.tensor([1.0, 1.0, 1.0])   # rata di semua neuron
+    prototypes[1] = torch.tensor([9.0, 0.0, 0.0])
+    x = torch.tensor([4.0, 4.0, 1.0])
+    # Skor kelas 0 nol; kelas 1 positif. Prediksi harus kelas 1.
+    assert int(classify_matched(x, prototypes)) == 1
+
+
+def test_adding_constant_does_not_change_prediction() -> None:
+    """Menambah jumlah spike yang SAMA ke semua neuron tidak mengubah
+    prediksi: z-score membuang rata-rata."""
+    prototypes = torch.zeros(2, 4, dtype=torch.float64)
+    prototypes[0] = torch.tensor([3.0, 3.0, 0.0, 0.0])
+    prototypes[1] = torch.tensor([0.0, 0.0, 3.0, 3.0])
+    x = torch.tensor([5.0, 4.0, 0.0, 0.0])
+    assert int(classify_matched(x, prototypes)) == int(
+        classify_matched(x + 7.0, prototypes)
+    )

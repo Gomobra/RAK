@@ -39,6 +39,18 @@ on:
         description: "Dengan resume_run: lanjutkan training N epoch lagi (0 = evaluasi saja)"
         required: false
         default: "0"
+      theta_plus:
+        description: "theta_plus (acuan 0.05; 0.0125 mengunci laju 4x lebih tinggi)"
+        required: false
+        default: "0.0125"
+      theta_max:
+        description: "Batas atas theta (mV)"
+        required: false
+        default: "40"
+      e_to_i:
+        description: "Bobot E->I (satu-satu)"
+        required: false
+        default: "1600"
       reassign:
         description: "Dengan resume_run: hitung ulang assignment (STDP mati), jangan pakai yang tersimpan"
         type: boolean
@@ -135,6 +147,9 @@ jobs:
             --eta ${{ github.event.inputs.eta || '1e-3' }} \
             --limit ${{ github.event.inputs.limit || '0' }} \
             --inhibition ${{ github.event.inputs.inhibition || '800' }} \
+            --theta-plus ${{ github.event.inputs.theta_plus || '0.0125' }} \
+            --theta-max ${{ github.event.inputs.theta_max || '40' }} \
+            --e-to-i ${{ github.event.inputs.e_to_i || '1600' }} \
             --rule ${{ github.event.inputs.rule || 'variant3' }} \
             --assign-samples ${{ github.event.inputs.assign || '0' }} \
             --test-limit ${{ github.event.inputs.test || '0' }} \

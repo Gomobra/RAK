@@ -75,6 +75,15 @@ class TrainConfig:
     #: Rule STDP: "variant3" (bentuk acuan) atau "eq3" (rumus paper).
     rule: str = "variant3"
 
+    #: Homeostasis: kenaikan theta per spike, dan batas atasnya.
+    #: `theta_eq = theta_plus * laju * tau_theta`, jadi `theta_plus`
+    #: menentukan laju fire kesetimbangan. Acuan 0.05.
+    theta_plus: float = 0.0125
+    theta_max: float = 40.0
+
+    #: Bobot E->I (satu-satu). Terpisah dari `inhibition_strength`.
+    e_to_i_strength: float = 1600.0
+
     #: Learning rate STDP Eq.3.
     eta: float = 1e-3
 
@@ -217,6 +226,8 @@ def train(
             NetworkConfig(
                 n_in=cfg.n_in, n_e=cfg.n_e, column_sum=cfg.column_sum,
                 inhibition_strength=cfg.inhibition_strength, rule=cfg.rule,
+                theta_plus=cfg.theta_plus, theta_max=cfg.theta_max,
+                e_to_i_strength=cfg.e_to_i_strength,
             ),
             stdp_config=Eq3Config(eta=cfg.eta, dt_ms=enc.dt_ms),
             seed=cfg.seed,
