@@ -148,6 +148,46 @@ Sweep 400 neuron dengan konektivitas acak:
 Inhibisi jenuh di 1600-3200 dan meledak di 4800. Nilai 1600 dipakai
 untuk training penuh.
 
+## Readout: assignment keras membuang informasi
+
+`assign_classes` memaksa setiap neuron memilih satu kelas. Neuron
+yang mirip 4 dan 9 hanya menyumbang ke salah satunya. Lima (lalu
+delapan) aturan baca dibandingkan pada bobot yang SAMA, dipilih di
+split validasi data TRAIN, lalu test diukur sekali:
+
+| readout | validasi | test |
+|---|---|---|
+| mean (rata-rata anggota kelas) | 45.80 | 42.18 |
+| max (neuron paling aktif) | 47.88 | 44.92 |
+| margin (berbobot kemurnian) | 52.40 | 47.46 |
+| topk (rata-rata 3 teratas) | 55.36 | 50.82 |
+| binary (proporsi yang fire) | 42.96 | 39.50 |
+| matched (dot product prototipe) | 55.92 | 51.76 |
+| matched_cos (prototipe dinormalisasi) | 57.80 | 55.18 |
+| **matched_cosz** (z-score gambar + prototipe) | **63.68** | **59.02** |
+
+Dengan 5.000 gambar kalibrasi dan 10.000 test, readout yang sama
+memberi **61.59%** (naik dari 45.94% dengan `mean`).
+
+Varian "column-centered" yang secara teori lebih rapi (blob berbobot
+nol) justru KALAH (55.18 vs 63.68 di validasi), jadi yang dipakai
+adalah varian yang menang di validasi, bukan yang terdengar lebih
+benar.
+
+## Receptive fields setelah 3 epoch
+
+`experiments/exp_003_mnist/receptive_fields.png` (400 neuron, urut
+kelas lalu selektivitas) menunjukkan dua populasi:
+
+- **Template digit bersih** — 0, 1, 6, 9 sangat jelas; 3 dan 7
+  bercampur dengan 8/9.
+- **Pola checkerboard** di ekor tiap kelas — neuron yang tidak pernah
+  memenangkan kompetisi. Kelas 5 hampir seluruhnya di ekor ini, dan
+  recall-nya 25%.
+
+Ini menjelaskan mengapa akurasi masih jauh dari 89%: bukan karena
+tidak ada fitur, tapi karena sebagian neuron tidak terpakai.
+
 ## Hasil terukur
 
 | konfigurasi | akurasi | intensitas eval | assignment |
@@ -156,6 +196,9 @@ untuk training penuh.
 | 100n, 1 epoch, sesudah perbaikan | **28.64%** | 3.7 | `[72,18,3,2,2,1,1,1]` |
 | 400n, 1 epoch, sebelum A+B | 9.20% | 9.3 | `[400]` (semua kelas 0) |
 | 400n, 1 epoch, sesudah A+B | **44.40%** | 2.0 | min 16/kelas |
+| 400n, 3 epoch, readout mean | 45.94% | 2.0 | min 10/kelas |
+| 400n, 3 epoch, readout topk | 53.06% | 2.0 | min 11/kelas |
+| 400n, 3 epoch, readout matched_cosz | **61.59%** | 2.0 | min 11/kelas |
 
 ## Konsekuensi
 
