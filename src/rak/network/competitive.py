@@ -116,6 +116,30 @@ class NetworkConfig:
     #: menentukan seberapa kuat inhibisi, arahnya sudah pasti.
     inhibition_strength: float = 1.0
 
+    #: Batas atas theta. `theta` tumbuh tiap spike dan meluruh dengan
+    #: tau 1e7 ms, jadi equilibrium-nya `theta_plus * laju * tau`.
+    #: Kalau laju kita lebih tinggi dari acuan, equilibrium-nya ikut
+    #: naik (terukur 79-115 mV di run 400 neuron) dan evaluasi terpaksa
+    #: memakai intensitas 9-12. Pada intensitas itu hampir semua piksel
+    #: menyala, input jadi seragam, dan informasi bentuk hilang --
+    #: assignment runtuh ke satu kelas (9.20%).
+    #:
+    #: Batas ini menjaga theta tetap di rezim yang bisa diatasi input
+    #: intensitas rendah. Ini penyimpangan dari acuan, dan disengaja:
+    #: acuan tidak butuh batas karena laju fire-nya 17x lebih rendah.
+    theta_max: float = 40.0
+
+    #: Probabilitas koneksi I -> E. Acuan memakai matriks ACAK
+    #: (`random/AiAe.npy`), bukan all-to-all seragam.
+    #:
+    #: Ini bukan detail kosmetik. Dengan I->E seragam, SETIAP neuron
+    #: eksitasi menerima inhibisi yang identik, sehingga kompetisi
+    #: sepenuhnya simetris dan semua neuron konvergen ke receptive
+    #: field yang sama (cosine 0.637 di run 100 neuron). Konektivitas
+    #: acak memberi tiap neuron "sidik" inhibisi yang berbeda, dan itu
+    #: yang memecah simetri pada tingkat fitur.
+    inhib_connectivity: float = 0.5
+
     #: Kalau True, bobot I->E dibagi jumlah neuron inhibitor supaya
     #: total inhibisi per neuron eksitasi konstan terhadap ukuran
     #: jaringan. Tanpa ini, `inhibition_strength` hanya bermakna untuk
@@ -243,13 +267,30 @@ class CompetitiveNetwork:
         # Ini persis `scale_per_neuron` yang sudah ada di
         # `rak.homeostasis.inhibition` (Phase 2B) tapi tidak dibawa ke
         # sini. Inkonsistensi yang sama pays off dua kali.
-        if cfg.scale_inhibition:
-            w_ie = cfg.inhibition_strength / max(cfg.n_inhibitory, 1)
-        else:
-            w_ie = cfg.inhibition_strength
-        self.w_ie = torch.full(
-            (cfg.n_inhibitory, cfg.n_e), w_ie, device=self.device,
-        )
+        # I -> E: konektivitas ACAK, dinormalisasi per kolom.
+        #
+        # Kolom = neuron eksitasi. Jumlah bobot yang diterimanya
+        # dibuat tepat `inhibition_strength`, jadi total inhibisi
+        # konstan terhadap ukuran jaringan DAN terhadap berapa banyak
+        # neuron inhibitor yang menyala (dalam ekspektasi).
+        #
+        # Versi lama: all-to-all seragam. Secara total sama, tapi
+        # secara struktur setiap neuron E menerima inhibisi yang
+        # identik -- kompetisi jadi simetris sempurna.
+        mask = (
+            torch.rand(
+                cfg.n_inhibitory, cfg.n_e,
+                generator=self.generator, device=self.device,
+            ) < cfg.inhib_connectivity
+        ).to(torch.float32)
+        # Jangan biarkan ada kolom kosong (neuron tanpa inhibisi sama
+        # sekali akan menang selamanya).
+        empty = mask.sum(dim=0) == 0
+        if bool(empty.any()):
+            idx = torch.nonzero(empty).flatten()
+            mask[idx, idx % cfg.n_inhibitory] = 1.0
+        col = mask.sum(dim=0).clamp_min(1.0)
+        self.w_ie = mask * (cfg.inhibition_strength / col).unsqueeze(0)
 
         # --- state ------------------------------------------------------
         self.state_e: ConductanceState = self.exc.init_state()
@@ -410,6 +451,10 @@ class CompetitiveNetwork:
                 self.theta_batch.sum(dim=0)
                 - float(batch - 1) * gamma_total * self.theta
             )
+        # Batas atas. Lihat `theta_max`: tanpa ini theta mengikuti
+        # laju fire dan bisa menuntut intensitas 9-12, yang menghapus
+        # informasi bentuk dari input.
+        self.theta = self.theta.clamp(max=cfg.theta_max)
         if not bool(torch.isfinite(self.theta).all()):
             raise FloatingPointError(
                 "theta menjadi tidak hingga. Ini berarti update "
