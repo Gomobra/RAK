@@ -43,6 +43,7 @@ from rak.network.competitive import (
     NetworkConfig,
     assign_classes,
     classify,
+    classify_matched,
 )
 
 __all__ = ["TrainConfig", "TrainResult", "train", "evaluate", "accuracy"]
@@ -304,6 +305,7 @@ def evaluate(
     encoder: EncoderConfig | None = None,
     batch_size: int = 64,
     assignments: Tensor | None = None,
+    prototypes: Tensor | None = None,
     seed: int = 0,
     max_samples: int | None = None,
 ) -> dict:
@@ -315,6 +317,9 @@ def evaluate(
         assignments: peta neuron -> kelas. Kalau None, dihitung dari
             split TRAIN (bukan test) — memakai label test untuk
             menentukan neuron mana milik kelas mana adalah kebocoran.
+        prototypes: (n_classes, n_e) profil laju dari split TRAIN.
+            Kalau diberikan, klasifikasi memakai `classify_matched`
+            (korelasi pola), bukan assignment keras.
 
     Returns:
         dict dengan `accuracy`, `confusion`, dan `n`.
@@ -370,16 +375,21 @@ def evaluate(
             flush=True,
         )
 
-    if assignments is None:
+    if prototypes is None and assignments is None:
         raise ValueError(
-            "`assignments` wajib diberikan. Hitung dengan "
-            "`assign_classes` dari spike count training SET — bukan "
-            "test set, karena itu membocorkan label."
+            "`prototypes` atau `assignments` wajib diberikan. Hitung "
+            "dari spike count TRAIN — bukan test, itu kebocoran."
         )
 
-    pred = torch.stack([
-        classify(counts[i], assignments) for i in range(counts.shape[0])
-    ])
+    if prototypes is not None:
+        pred = torch.stack([
+            classify_matched(counts[i], prototypes)
+            for i in range(counts.shape[0])
+        ])
+    else:
+        pred = torch.stack([
+            classify(counts[i], assignments) for i in range(counts.shape[0])
+        ])
 
     confusion = torch.zeros(10, 10, dtype=torch.long)
     for t, p in zip(labels.tolist(), pred.tolist()):

@@ -96,18 +96,23 @@ def _predict(
     # --- matched filter: pakai SELURUH profil laju, bukan assignment
     # keras. Neuron yang mirip 4 dan 9 tetap menyumbang ke keduanya
     # dengan bobot berbeda; assignment keras membuang informasi itu.
-    if kind in ("matched", "matched_cos"):
+    if kind in ("matched", "matched_cos", "matched_cosz"):
         assert rates is not None
         r = rates.to(torch.float64)
+        if kind == "matched":
+            return (counts @ r.T).argmax(dim=1)
         if kind == "matched_cos":
-            # z-score per gambar: hilangkan perbedaan intensitas total,
-            # sisakan POLA neuron mana yang aktif.
-            c = counts - counts.mean(dim=1, keepdim=True)
-            c = c / c.std(dim=1, keepdim=True).clamp_min(1e-9)
-            r = r - r.mean(dim=1, keepdim=True)
-            r = r / r.std(dim=1, keepdim=True).clamp_min(1e-9)
-            return (c @ r.T).argmax(dim=1)
-        return (counts @ r.T).argmax(dim=1)
+            # Pusatkan per neuron: blob (laju sama di semua kelas)
+            # jadi bobot nol. Normalisasi baris = cosine per kelas.
+            r = r - r.mean(dim=0, keepdim=True)
+            r = r / r.norm(dim=1, keepdim=True).clamp_min(1e-9)
+            return (counts @ r.T).argmax(dim=1)
+        # matched_cosz: tambahan z-score per gambar (pola murni).
+        c = counts - counts.mean(dim=1, keepdim=True)
+        c = c / c.std(dim=1, keepdim=True).clamp_min(1e-9)
+        r = r - r.mean(dim=1, keepdim=True)
+        r = r / r.std(dim=1, keepdim=True).clamp_min(1e-9)
+        return (c @ r.T).argmax(dim=1)
     for c in range(n_classes):
         members = assignments == c
         n = int(members.sum())
@@ -181,7 +186,7 @@ def main(argv: list[str] | None = None) -> int:
     rows = {}
     for kind in (
         "mean", "max", "margin", "topk", "binary",
-        "matched", "matched_cos",
+        "matched", "matched_cos", "matched_cosz",
     ):
         pred_val = _predict(val_counts, assignments, purity, kind, rates)
         pred_te = _predict(te_counts, assignments, purity, kind, rates)

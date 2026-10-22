@@ -33,7 +33,12 @@ import torch
 
 from rak.data.encode import EncoderConfig, encode_poisson
 from rak.data.mnist import load_mnist
-from rak.network import CompetitiveNetwork, NetworkConfig, assign_classes
+from rak.network import (
+    CompetitiveNetwork,
+    NetworkConfig,
+    assign_classes,
+    class_prototypes,
+)
 from rak.network.train import present_adaptive
 from rak.learning.stdp3 import Eq3Config
 from rak.network.train import TrainConfig, accuracy, evaluate, train
@@ -85,26 +90,31 @@ def _evaluate_only(args, net, train_set, test_set, enc, saved_assignments):
     """
     gen = torch.Generator().manual_seed(args.seed + 1)
 
-    if saved_assignments is not None:
-        assignments = torch.as_tensor(saved_assignments)
-    else:
-        n_assign = args.assign_samples or min(len(train_set), 10_000)
-        chunks = []
-        start = 0
-        while start < n_assign:
-            end = min(start + args.batch, n_assign)
-            # SAMA dengan training: intensitas adaptif. Tanpa ini,
-            # assignment dihitung dari neuron yang tidak menyala --
-            # persis bug yang membuat run sebelumnya 9.74%.
-            c, _ = present_adaptive(
-                net, train_set.images[start:end], enc, gen, learn=False
-            )
-            chunks.append(c)
-            start = end
-        counts = torch.cat(chunks, dim=0)
-        assignments = assign_classes(
-            counts, train_set.labels[:counts.shape[0]]
+    # Hitung spike count dari data TRAIN SELALU. `assignments` boleh
+    # dipakai ulang kalau sudah tersimpan, tapi `prototypes` butuh
+    # count-nya, dan tanpa ini cabang `saved_assignments` akan
+    # mengakses variabel `counts` yang tidak pernah dibuat.
+    n_assign = args.assign_samples or min(len(train_set), 10_000)
+    chunks = []
+    start = 0
+    while start < n_assign:
+        end = min(start + args.batch, n_assign)
+        # SAMA dengan training: intensitas adaptif. Tanpa ini,
+        # assignment dihitung dari neuron yang tidak menyala --
+        # persis bug yang membuat run sebelumnya 9.74%.
+        c, _ = present_adaptive(
+            net, train_set.images[start:end], enc, gen, learn=False
         )
+        chunks.append(c)
+        start = end
+    counts = torch.cat(chunks, dim=0)
+    labels_train = train_set.labels[: counts.shape[0]]
+    assignments = (
+        torch.as_tensor(saved_assignments)
+        if saved_assignments is not None
+        else assign_classes(counts, labels_train)
+    )
+    prototypes = class_prototypes(counts, labels_train)
 
     per_class = torch.bincount(assignments, minlength=10)
     print(
@@ -114,7 +124,8 @@ def _evaluate_only(args, net, train_set, test_set, enc, saved_assignments):
 
     result = evaluate(
         net, test_set, encoder=enc, batch_size=args.batch,
-        assignments=assignments, seed=args.seed + 2,
+        assignments=assignments, prototypes=prototypes,
+        seed=args.seed + 2,
         max_samples=args.test_limit or None,
     )
     acc = accuracy(result)
@@ -317,6 +328,9 @@ def run(args: argparse.Namespace) -> int:
         start = end
     counts = torch.cat(train_counts, dim=0)
     assignments = assign_classes(counts, subset.labels[:counts.shape[0]])
+    prototypes = class_prototypes(
+        counts, subset.labels[:counts.shape[0]]
+    )
     n_per_class = int(torch.bincount(assignments, minlength=10).min())
     print(
         f"  neuron per kelas: min {n_per_class}, "
@@ -326,7 +340,8 @@ def run(args: argparse.Namespace) -> int:
 
     result = evaluate(
         net, test_set, encoder=enc, batch_size=args.batch,
-        assignments=assignments, seed=args.seed + 2,
+        assignments=assignments, prototypes=prototypes,
+        seed=args.seed + 2,
         max_samples=args.test_limit or None,
     )
     acc = accuracy(result)
@@ -351,7 +366,11 @@ def run(args: argparse.Namespace) -> int:
     }
     (out_dir / "report.json").write_text(json.dumps(report, indent=2))
     torch.save(
-        {"net": net.state_dict(), "assignments": assignments},
+        {
+            "net": net.state_dict(),
+            "assignments": assignments,
+            "prototypes": prototypes,
+        },
         out_dir / "weights.pt",
     )
 
