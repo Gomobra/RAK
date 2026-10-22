@@ -479,14 +479,24 @@ class CompetitiveNetwork:
 
     # ------------------------------------------------------------------
     def state_dict(self) -> dict:
+        # `w_ie` ikut disimpan. Matriks ini TIDAK dipelajari, tapi
+        # menentukan dinamika: kalau checkpoint dimuat tanpa dia,
+        # evaluasi berjalan di jaringan inhibisi yang berbeda dari
+        # yang dipakai training. Selama ini terselamatkan hanya
+        # karena mask dibangkitkan dari generator dengan seed yang
+        # sama dan urutan pemanggilan yang sama -- itu kebetulan,
+        # bukan jaminan.
         return {
             "w_e": self.w_e.detach().cpu(),
+            "w_ie": self.w_ie.detach().cpu(),
             "theta": self.theta.detach().cpu(),
             "n_presentations": self.n_presentations,
         }
 
     def load_state_dict(self, state: dict) -> None:
         self.w_e = state["w_e"].to(self.device)
+        if "w_ie" in state:
+            self.w_ie = state["w_ie"].to(self.device)
         self.theta = state["theta"].to(self.device)
         self.n_presentations = state.get("n_presentations", 0)
 

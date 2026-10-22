@@ -1,0 +1,69 @@
+name: Readouts
+
+# Membandingkan aturan baca pada bobot hasil training yang SUDAH ADA.
+# Tidak ada training ulang: satu run evaluasi (~5 menit) untuk lima
+# readout, supaya keputusan readout tidak menebak.
+
+on:
+  workflow_dispatch:
+    inputs:
+      run_id:
+        description: "Run ID yang artifact-nya berisi weights.pt"
+        required: true
+      train_samples:
+        description: "Jumlah gambar train untuk kalibrasi+validasi"
+        required: false
+        default: "5000"
+      test_samples:
+        description: "Jumlah gambar test"
+        required: false
+        default: "5000"
+      inhibition:
+        description: "inhibition_strength yang dipakai saat training"
+        required: false
+        default: "1600"
+
+jobs:
+  readouts:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    permissions:
+      contents: read
+      actions: read
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install
+        run: pip install -e . --quiet
+
+      - name: Ambil bobot
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh run download ${{ github.event.inputs.run_id }} -D runs/readouts
+          find runs/readouts -name weights.pt
+
+      - name: Bandingkan readout
+        run: |
+          W=$(find runs/readouts -name weights.pt | head -1)
+          python scripts/compare_readouts.py \
+            --weights "$W" \
+            --train-samples ${{ github.event.inputs.train_samples }} \
+            --test-samples ${{ github.event.inputs.test_samples }} \
+            --inhibition ${{ github.event.inputs.inhibition }} \
+            --out runs/readouts/readouts.json | tee runs/readouts/readouts.txt
+
+      - name: Ringkasan
+        if: always()
+        run: cat runs/readouts/readouts.txt >> "$GITHUB_STEP_SUMMARY" || true
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: rak-readouts-${{ github.run_number }}
+          path: runs/readouts/
+          retention-days: 30
