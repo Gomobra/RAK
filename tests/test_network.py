@@ -60,17 +60,24 @@ def test_e_to_i_is_one_to_one():
     assert torch.equal(net.w_ei, torch.eye(16))
 
 
-def test_i_to_e_is_all_to_all():
-    """Bobot I->E POSITIF sebagai besaran konduktansi.
+def test_i_to_e_is_positive_and_sparse():
+    """Bobot I->E POSITIF, dan konektivitasnya ACAK (bukan all-to-all).
 
     Arah inhibisi datang dari `e_syn_i = -100 mV`, bukan dari bobot
-    negatif. Bobot negatif akan menghijau inhibitory dua kali:
+    negatif. Bobot negatif akan menghitung inhibisi dua kali:
     `gi` negatif x `E_i` negatif jadi positif, sehingga inhibisi
     berubah jadi depolarisasi.
+
+    All-to-all seragam membuat setiap neuron eksitasi menerima
+    inhibisi yang identik. Kompetisi jadi simetris sempurna dan semua
+    neuron konvergen ke receptive field yang sama (0.975 terukur).
+    Acuan memakai matriks acak (`random/AiAe.npy`), jadi test ini
+    menguji dua hal: tidak ada bobot negatif, dan ada sparsitas.
     """
     net = _net(n_e=16)
-    assert (net.w_ie > 0).all(), "bukan negatif -- lihat docstring"
-    assert float((net.w_ie != 0).sum()) == 256.0
+    assert (net.w_ie >= 0).all(), "tidak boleh negatif -- lihat docstring"
+    frac_zero = float((net.w_ie == 0).double().mean())
+    assert 0.2 < frac_zero < 0.8, f"bukan konektivitas acak: {frac_zero:.3f}"
     assert float(net.exc.config.e_syn_i) < float(net.exc.config.v_rest), (
         "potensial balik inhibitor harus di bawah v_rest supaya "
         "memang menghambat"
@@ -330,7 +337,7 @@ def test_training_loop_takes_no_labels():
     melihat akurasinya.
     """
     params = list(inspect.signature(CompetitiveNetwork.present_batch).parameters)
-    assert params == ["self", "z_pre"], params
+    assert params == ["self", "z_pre", "learn"], params
 
 
 def test_config_defaults_match_paper():
@@ -339,7 +346,11 @@ def test_config_defaults_match_paper():
     assert cfg.n_in == 784
     assert cfg.column_sum == 78.0
     assert cfg.dt_ms == 0.5
-    assert cfg.theta_plus == 0.05
+    # 0.0125, bukan 0.05: theta_eq = theta_plus * laju * tau. Acuan
+    # berjalan pada laju 17x lebih rendah, jadi 0.05 di sini memberi
+    # theta_eq ~108 mV dan memaksa evaluasi memakai intensitas 10-12.
+    assert cfg.theta_plus == 0.0125
+    assert cfg.theta_max == 40.0
     assert cfg.tau_theta_ms == 10_000_000.0
     assert cfg.n_inhibitory == cfg.n_e
 

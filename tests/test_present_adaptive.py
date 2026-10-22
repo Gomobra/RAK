@@ -33,7 +33,7 @@ class _StubNet:
         self.spikes_per_call = float(spikes_per_call)
         self.calls = 0
 
-    def present_batch(self, z_pre: torch.Tensor):
+    def present_batch(self, z_pre: torch.Tensor, *, learn: bool = True):
         self.calls += 1
         n = int(z_pre.shape[1])
         counts = torch.full((n, self.config.n_e), self.spikes_per_call / self.config.n_e)
@@ -116,7 +116,7 @@ def test_escalation_stops_per_image_not_per_batch() -> None:
 
     original = net.present_batch
 
-    def first_zero_rest_enough(z_pre):
+    def first_zero_rest_enough(z_pre, *, learn: bool = True):
         if net.calls == 0:
             return original(z_pre)
         net.calls += 1

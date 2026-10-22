@@ -80,6 +80,11 @@ def _synthetic_digits(n_per_class=8, n_classes=10, seed=0):
 
 def _train_briefly(n_e=24, batches=6, eta=1e-3, **net_kw):
     images, _ = _synthetic_digits()
+    # Inhibisi HARUS cukup kuat. Dengan default 1.0, w_ie kolom
+    # berjumlah 1.0 -- praktis tidak ada inhibisi, dan semua neuron
+    # memakai receptive field yang sama. Test-nya lalu menguji rezim
+    # yang tidak pernah dipakai training.
+    net_kw.setdefault("inhibition_strength", 400.0)
     net = CompetitiveNetwork(
         NetworkConfig(n_e=n_e, **net_kw),
         stdp_config=Eq3Config(eta=eta),
@@ -115,7 +120,9 @@ def test_correlation_does_not_drift_toward_one():
     """
     images, _ = _synthetic_digits()
     net = CompetitiveNetwork(
-        NetworkConfig(n_e=24), stdp_config=Eq3Config(eta=1e-3), seed=1
+        NetworkConfig(n_e=24, inhibition_strength=400.0),
+        stdp_config=Eq3Config(eta=1e-3),
+        seed=1,
     )
     enc = EncoderConfig()
     g = torch.Generator().manual_seed(1)
@@ -142,7 +149,9 @@ def test_initial_columns_are_already_different():
     membedakan, dan test lain akan gagal tanpa alasan yang jelas.
     """
     net = CompetitiveNetwork(
-        NetworkConfig(n_e=24), stdp_config=Eq3Config(eta=1e-3), seed=1
+        NetworkConfig(n_e=24, inhibition_strength=400.0),
+        stdp_config=Eq3Config(eta=1e-3),
+        seed=1,
     )
     assert _column_correlation(net.w_e) < 0.3
 
