@@ -127,6 +127,7 @@ def _evaluate_only(args, net, train_set, test_set, enc, saved_assignments):
         assignments=assignments, prototypes=prototypes,
         seed=args.seed + 2,
         max_samples=args.test_limit or None,
+        trials=args.trials,
     )
     acc = accuracy(result)
 
@@ -352,6 +353,7 @@ def run(args: argparse.Namespace) -> int:
         assignments=assignments, prototypes=prototypes,
         seed=args.seed + 2,
         max_samples=args.test_limit or None,
+        trials=args.trials,
     )
     acc = accuracy(result)
 
@@ -448,6 +450,9 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--continue-epochs", type=int, default=0,
                    help="dengan --resume: lanjutkan training N epoch "
                         "lagi, bukan hanya evaluasi")
+    p.add_argument("--trials", type=int, default=1,
+                   help="jumlah presentasi per gambar test (rata-rata "
+                        "mengurangi noise encoder Poisson)")
     p.add_argument("--theta-plus", type=float, default=0.0125)
     p.add_argument("--theta-max", type=float, default=40.0)
     p.add_argument("--e-to-i", type=float, default=1600.0)

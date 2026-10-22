@@ -319,6 +319,7 @@ def evaluate(
     prototypes: Tensor | None = None,
     seed: int = 0,
     max_samples: int | None = None,
+    trials: int = 1,
 ) -> dict:
     """Klasifikasi tanpa supervision.
 
@@ -352,6 +353,8 @@ def evaluate(
             f"`0 or None` menghasilkan None, tapi kalau `max_samples` "
             f"dikirim sebagai 0 eksplisit, `images[:0]` jadi kosong."
         )
+    if trials < 1:
+        raise ValueError(f"trials harus >= 1, dapat {trials}")
     all_counts = []
     all_intensity = []
     start = 0
@@ -359,11 +362,20 @@ def evaluate(
         end = min(start + batch_size, n)
         # WAJIB sama dengan training: intensitas adaptif, bukan
         # `start_intensity` sekali. Lihat `present_adaptive`.
-        counts, intensity = present_adaptive(
-            net, images[start:end], enc, gen, learn=False
-        )
-        all_counts.append(counts)
-        all_intensity.append(intensity)
+        #
+        # `trials > 1`: encoder Poisson itu stokastik. Satu sampel
+        # memberi pola spike yang bervariasi; menjumlahkan beberapa
+        # percobaan mengurangi varians itu tanpa mengubah bobot.
+        total = None
+        last_intensity = None
+        for _ in range(trials):
+            counts, intensity = present_adaptive(
+                net, images[start:end], enc, gen, learn=False
+            )
+            total = counts if total is None else total + counts
+            last_intensity = intensity
+        all_counts.append(total)
+        all_intensity.append(last_intensity)
         start = end
     counts = torch.cat(all_counts, dim=0)
     used_intensity = torch.cat(all_intensity, dim=0)

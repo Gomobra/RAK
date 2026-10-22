@@ -39,6 +39,10 @@ on:
         description: "Dengan resume_run: lanjutkan training N epoch lagi (0 = evaluasi saja)"
         required: false
         default: "0"
+      trials:
+        description: "Jumlah presentasi per gambar test (default 1)"
+        required: false
+        default: "1"
       theta_plus:
         description: "theta_plus (acuan 0.05; 0.0125 mengunci laju 4x lebih tinggi)"
         required: false
@@ -151,6 +155,7 @@ jobs:
             --eta ${{ github.event.inputs.eta || '1e-3' }} \
             --limit ${{ github.event.inputs.limit || '0' }} \
             --inhibition ${{ github.event.inputs.inhibition || '800' }} \
+            --trials ${{ github.event.inputs.trials || '1' }} \
             --theta-plus ${{ github.event.inputs.theta_plus || '0.0125' }} \
             --theta-max ${{ github.event.inputs.theta_max || '40' }} \
             --e-to-i ${{ github.event.inputs.e_to_i || '1600' }} \
