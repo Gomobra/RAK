@@ -45,11 +45,15 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           gh run download ${{ github.event.inputs.run_id }} -D runs/readouts
-          find runs/readouts -name weights.pt
+          # Artifact satu run berisi dua weights.pt: model utama dan
+          # model smoke (100 neuron). Yang smoke harus dibuang, kalau
+          # tidak `find | head -1` bisa memilih model 100 neuron dan
+          # seluruh perbandingan jadi tidak valid.
+          find runs/readouts -name weights.pt -not -path "*smoke*"
 
       - name: Bandingkan readout
         run: |
-          W=$(find runs/readouts -name weights.pt | head -1)
+          W=$(find runs/readouts -name weights.pt -not -path "*smoke*" | head -1)
           python scripts/compare_readouts.py \
             --weights "$W" \
             --train-samples ${{ github.event.inputs.train_samples }} \
