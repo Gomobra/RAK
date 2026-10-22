@@ -118,10 +118,13 @@ jobs:
           if [ -n "$RESUME_RUN" ]; then
             CKPT=$(find runs/resume -name checkpoint.pt | head -1)
             WEIGHTS=$(find runs/resume -name weights.pt | head -1)
-            if [ -n "$CKPT" ]; then
-              RESUME_ARG="--resume $CKPT"
-            elif [ -n "$WEIGHTS" ]; then
+            # weights.pt = model FINAL. checkpoint.pt = snapshot
+            # terakhir (bisa di tengah epoch). Evaluasi harus memakai
+            # yang final; checkpoint hanya cadangan.
+            if [ -n "$WEIGHTS" ]; then
               RESUME_ARG="--resume $WEIGHTS"
+            elif [ -n "$CKPT" ]; then
+              RESUME_ARG="--resume $CKPT"
             fi
             echo "resume arg: $RESUME_ARG"
           fi
