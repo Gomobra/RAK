@@ -217,6 +217,7 @@ def run(args: argparse.Namespace) -> int:
     subset = train_set.subset(args.limit) if args.limit else train_set
 
     net = None
+    res = None
     if args.resume:
         print(
             f"\n[2b/4] RESUME: muat bobot dari {args.resume}",
@@ -330,14 +331,18 @@ def run(args: argparse.Namespace) -> int:
     )
     acc = accuracy(result)
 
+    # `res` hanya ada kalau training dijalankan di proses ini. Jalur
+    # resume (evaluasi/assignment ulang) tidak punya TrainResult.
     report = {
-        "neurons": args.neurons,
+        "neurons": int(net.w_e.shape[1]),
         "epochs": args.epochs,
         "eta": args.eta,
         "seed": args.seed,
-        "presentations": res.presentations,
-        "mean_spikes_per_presentation": res.mean_spikes,
-        "dead_neurons": res.dead_neurons,
+        "presentations": res.presentations if res is not None else None,
+        "mean_spikes_per_presentation": (
+            res.mean_spikes if res is not None else float("nan")
+        ),
+        "dead_neurons": res.dead_neurons if res is not None else None,
         "test_accuracy_percent": acc,
         "paper_accuracy_percent": PAPER_ACCURACY.get(args.neurons),
         "wall_minutes": round((time.perf_counter() - t0) / 60, 1),
@@ -356,9 +361,12 @@ def run(args: argparse.Namespace) -> int:
         f"  RAK — MNIST unsupervised (STDP Eq.3, tanpa teaching signal)",
         "=" * 62,
         f"  neuron eksitasi      : {args.neurons}",
-        f"  epoch / presentasi   : {args.epochs} / {res.presentations}",
-        f"  spike per presentasi : {res.mean_spikes:.1f}",
-        f"  neuron mati          : {res.dead_neurons}",
+        f"  epoch / presentasi   : {args.epochs} / "
+        f"{res.presentations if res is not None else '-'}",
+        f"  spike per presentasi : "
+        f"{f'{res.mean_spikes:.1f}' if res is not None else '-'}",
+        f"  neuron mati          : "
+        f"{res.dead_neurons if res is not None else '-'}",
         f"  AKURASI TEST         : {acc:.2f}%",
         _fmt_gate(args.neurons, acc),
         f"  waktu jalan          : {report['wall_minutes']} menit",
