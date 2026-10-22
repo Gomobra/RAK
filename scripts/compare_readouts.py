@@ -96,7 +96,7 @@ def _predict(
     # --- matched filter: pakai SELURUH profil laju, bukan assignment
     # keras. Neuron yang mirip 4 dan 9 tetap menyumbang ke keduanya
     # dengan bobot berbeda; assignment keras membuang informasi itu.
-    if kind in ("matched", "matched_cos", "matched_cosz"):
+    if kind in ("matched", "matched_cos", "matched_cosz", "matched_cosz_std"):
         assert rates is not None
         r = rates.to(torch.float64)
         if kind == "matched":
@@ -113,6 +113,8 @@ def _predict(
         r = r - r.mean(dim=1, keepdim=True)
         r = r / r.std(dim=1, keepdim=True).clamp_min(1e-9)
         return (c @ r.T).argmax(dim=1)
+    if kind == "matched_cosz_std":
+        raise ValueError("ditangani di main(), butuh statistik kalibrasi")
     for c in range(n_classes):
         members = assignments == c
         n = int(members.sum())
@@ -194,6 +196,24 @@ def main(argv: list[str] | None = None) -> int:
             "val": round(_accuracy(pred_val, val_labels), 2),
             "test": round(_accuracy(pred_te, te_labels), 2),
         }
+
+    # Skor mentah matched_cosz untuk kalibrasi: untuk standarisasi
+    # per kelas. Beberapa kelas sistematis memberi skor lebih tinggi
+    # hanya karena komposisi neuronnya, bukan karena cocok.
+    def _scores(counts: torch.Tensor) -> torch.Tensor:
+        c = counts - counts.mean(dim=1, keepdim=True)
+        c = c / c.std(dim=1, keepdim=True).clamp_min(1e-9)
+        r = rates - rates.mean(dim=1, keepdim=True)
+        r = r / r.std(dim=1, keepdim=True).clamp_min(1e-9)
+        return c @ r.T
+
+    s_cal = _scores(cal_counts)
+    mu = s_cal.mean(dim=0)
+    sd = s_cal.std(dim=0).clamp_min(1e-9)
+    rows["matched_cosz_std"] = {
+        "val": round(_accuracy(((_scores(val_counts) - mu) / sd).argmax(1), val_labels), 2),
+        "test": round(_accuracy(((_scores(te_counts) - mu) / sd).argmax(1), te_labels), 2),
+    }
 
     best = max(rows, key=lambda k: rows[k]["val"])
     print(f"neuron: {n_e}, kalibrasi {split}, validasi {n_tr - split}, test {n_te}")
