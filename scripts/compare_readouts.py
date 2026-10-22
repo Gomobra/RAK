@@ -108,8 +108,13 @@ def _predict(
             totals[:, c] = (block > 0).double().sum(dim=1) / n
         elif kind == "margin":
             w = weights[members]
-            denom = w.sum().clamp_min(1e-9)
-            totals[:, c] = (block * w).sum(dim=1) / denom
+            denom = float(w.sum())
+            if denom < 1e-9:
+                # Semua anggota kelas ini tidak selektif. Jangan biarkan
+                # kelas itu mustahil menang hanya karena pembaginya nol.
+                totals[:, c] = block.sum(dim=1) / n
+            else:
+                totals[:, c] = (block * w).sum(dim=1) / denom
         else:
             raise ValueError(kind)
     return totals.argmax(dim=1)
