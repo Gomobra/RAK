@@ -185,6 +185,7 @@ def train(
     *,
     encoder: EncoderConfig | None = None,
     progress: bool = True,
+    net: CompetitiveNetwork | None = None,
 ) -> tuple[CompetitiveNetwork, TrainResult]:
     """Latih jaringan tanpa supervision.
 
@@ -196,6 +197,10 @@ def train(
         config: parameter training.
         encoder: konfigurasi spike.
         progress: cetak progres ke stderr.
+        net: jaringan yang sudah dilatih, untuk MELANJUTKAN training.
+            Kalau None, jaringan baru dibuat dari `config`. Bobot dan
+            theta ikut, trace STDP mulai dari nol -- itu wajar, trace
+            adalah keadaan jangka pendek, bukan parameter.
 
     Returns:
         (jaringan, hasil)
@@ -206,14 +211,15 @@ def train(
     out_dir = Path(cfg.out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
 
-    net = CompetitiveNetwork(
-        NetworkConfig(
-            n_in=cfg.n_in, n_e=cfg.n_e, column_sum=cfg.column_sum,
-            inhibition_strength=cfg.inhibition_strength, rule=cfg.rule,
-        ),
-        stdp_config=Eq3Config(eta=cfg.eta, dt_ms=enc.dt_ms),
-        seed=cfg.seed,
-    )
+    if net is None:
+        net = CompetitiveNetwork(
+            NetworkConfig(
+                n_in=cfg.n_in, n_e=cfg.n_e, column_sum=cfg.column_sum,
+                inhibition_strength=cfg.inhibition_strength, rule=cfg.rule,
+            ),
+            stdp_config=Eq3Config(eta=cfg.eta, dt_ms=enc.dt_ms),
+            seed=cfg.seed,
+        )
 
     images = data.without_labels()
     n_samples = int(images.shape[0])

@@ -35,8 +35,12 @@ on:
         description: "Jumlah gambar test untuk evaluasi (0 = 10000)"
         required: false
         default: "0"
+      continue_epochs:
+        description: "Dengan resume_run: lanjutkan training N epoch lagi (0 = evaluasi saja)"
+        required: false
+        default: "0"
       resume_run:
-        description: "Run ID yang checkpoint-nya mau dievaluasi (kosong = training baru)"
+        description: "Run ID yang checkpoint-nya mau dievaluasi/dilanjutkan (kosong = training baru)"
         required: false
         default: ""
       smoke:
@@ -127,6 +131,7 @@ jobs:
             --assign-samples ${{ github.event.inputs.assign || '0' }} \
             --test-limit ${{ github.event.inputs.test || '0' }} \
             --gate ${{ github.event.inputs.gate || '0' }} \
+            --continue-epochs ${{ github.event.inputs.continue_epochs || '0' }} \
             $RESUME_ARG \
             ${{ github.event.inputs.smoke == 'false' && '--no-smoke' || '' }}
 

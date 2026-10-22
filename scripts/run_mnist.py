@@ -216,6 +216,7 @@ def run(args: argparse.Namespace) -> int:
     # ---------------- stage 2: training ----------------------------
     subset = train_set.subset(args.limit) if args.limit else train_set
 
+    net = None
     if args.resume:
         print(
             f"\n[2b/4] RESUME: muat bobot dari {args.resume}",
@@ -234,34 +235,54 @@ def run(args: argparse.Namespace) -> int:
             seed=args.seed,
         )
         net.load_state_dict(blob["net"])
-        if "assignments" in blob:
+        if args.continue_epochs > 0:
+            print(
+                f"\n[3/4] LANJUT TRAINING: {args.continue_epochs} epoch "
+                f"dari bobot yang dimuat",
+                flush=True,
+            )
+            cfg = TrainConfig(
+                n_e=int(net.w_e.shape[1]),
+                epochs=args.continue_epochs,
+                batch_size=args.batch,
+                eta=args.eta,
+                seed=args.seed,
+                inhibition_strength=args.inhibition,
+                rule=args.rule,
+                out_dir=str(out_dir),
+                log_every=args.log_every,
+                checkpoint_every=args.checkpoint_every,
+            )
+            net, res = train(subset, cfg, encoder=enc, net=net)
+            print(f"\n  {res.summary()}", flush=True)
+        elif "assignments" in blob:
             print(
                 "  bobot sudah punya assignments; hanya perlu tes",
                 flush=True,
             )
-            saved = blob["assignments"]
-        else:
-            saved = None
-        return _evaluate_only(args, net, train_set, test_set, enc, saved)
-    print(
-        f"\n[3/4] TRAINING: {args.neurons} neuron, {args.epochs} epoch, "
-        f"eta={args.eta}",
-        flush=True,
-    )
-    cfg = TrainConfig(
-        n_e=args.neurons,
-        epochs=args.epochs,
-        batch_size=args.batch,
-        eta=args.eta,
-        seed=args.seed,
-        inhibition_strength=args.inhibition,
-        rule=args.rule,
-        out_dir=str(out_dir),
-        log_every=args.log_every,
-        checkpoint_every=args.checkpoint_every,
-    )
-    net, res = train(subset, cfg, encoder=enc)
-    print(f"\n  {res.summary()}", flush=True)
+            return _evaluate_only(
+                args, net, train_set, test_set, enc, blob["assignments"]
+            )
+    if net is None:
+        print(
+            f"\n[3/4] TRAINING: {args.neurons} neuron, {args.epochs} epoch, "
+            f"eta={args.eta}",
+            flush=True,
+        )
+        cfg = TrainConfig(
+            n_e=args.neurons,
+            epochs=args.epochs,
+            batch_size=args.batch,
+            eta=args.eta,
+            seed=args.seed,
+            inhibition_strength=args.inhibition,
+            rule=args.rule,
+            out_dir=str(out_dir),
+            log_every=args.log_every,
+            checkpoint_every=args.checkpoint_every,
+        )
+        net, res = train(subset, cfg, encoder=enc)
+        print(f"\n  {res.summary()}", flush=True)
 
     # ---------------- stage 3: assignment -------------------------
     # Assignment dihitung dari TRAINING SET. Kalau dari test set,
@@ -384,7 +405,10 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--smoke-minutes", type=int, default=5)
     # gate
     p.add_argument("--resume", default="",
-                   help="path ke weights.pt — lewati training, hanya evaluasi")
+                   help="path ke weights.pt/checkpoint.pt")
+    p.add_argument("--continue-epochs", type=int, default=0,
+                   help="dengan --resume: lanjutkan training N epoch "
+                        "lagi, bukan hanya evaluasi")
     p.add_argument("--column-sum", type=float, default=78.0)
     p.add_argument("--gate", type=float, default=0.0,
                    help="gagal (exit 1) kalau akurasi di bawah ini")
