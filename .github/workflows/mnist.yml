@@ -39,6 +39,11 @@ on:
         description: "Dengan resume_run: lanjutkan training N epoch lagi (0 = evaluasi saja)"
         required: false
         default: "0"
+      reassign:
+        description: "Dengan resume_run: hitung ulang assignment (STDP mati), jangan pakai yang tersimpan"
+        type: boolean
+        required: false
+        default: false
       resume_run:
         description: "Run ID yang checkpoint-nya mau dievaluasi/dilanjutkan (kosong = training baru)"
         required: false
@@ -132,6 +137,7 @@ jobs:
             --test-limit ${{ github.event.inputs.test || '0' }} \
             --gate ${{ github.event.inputs.gate || '0' }} \
             --continue-epochs ${{ github.event.inputs.continue_epochs || '0' }} \
+            ${{ github.event.inputs.reassign == 'true' && '--reassign' || '' }} \
             $RESUME_ARG \
             ${{ github.event.inputs.smoke == 'false' && '--no-smoke' || '' }}
 

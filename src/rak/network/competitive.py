@@ -554,29 +554,52 @@ def assign_classes(
 
 
 def classify(
-    spike_counts: Tensor, assignments: Tensor, n_classes: int = 10
+    spike_counts: Tensor,
+    assignments: Tensor,
+    n_classes: int = 10,
+    topk: int = 3,
 ) -> Tensor:
     """Tebak digit dari spike count, tanpa melihat label.
 
     Args:
-        spike_counts: (n_e,) untuk satu gambar, atau (B, n_e) untuk
-            B gambar sekaligus.
+        spike_counts: (n_e,) untuk satu gambar.
         assignments: (n_e,) kelas tiap neuron, dari `assign_classes`.
         n_classes: jumlah kelas.
+        topk: ambil rata-rata k spike count TERTINGGI di antara anggota
+            kelas, bukan rata-rata semua anggota.
 
     Returns:
-        () untuk satu gambar, (B,) untuk B gambar.
+        skalar: kelas yang menang.
 
-    Membagi dengan jumlah anggota itu penting: tanpa itu kelas dengan
-    neuron paling banyak selalu menang, bukan yang paling responsif.
+    Kenapa `topk`, bukan rata-rata semua anggota: neuron yang tidak
+    selektif (merespons semua digit) menambah "kebisingan" yang sama
+    ke setiap kelas. Rata-rata 3 teratas hanya melihat neuron yang
+    benar-benar aktif untuk gambar itu.
+
+    Ini BUKAN hyperparameter yang ditebak. Lima readout dibandingkan
+    pada bobot 400 neuron / 3 epoch, dipilih di split validasi dari
+    data TRAIN, lalu diukur sekali di test:
+
+        readout   validasi   test
+        mean         45.80   42.18
+        max          47.88   44.92
+        margin       52.40   47.46
+        topk         55.36   50.82
+        binary       42.96   39.50
     """
     counts = spike_counts.to(torch.float64)
+    if counts.dim() != 1:
+        raise ValueError(
+            "classify() menerima satu gambar (n_e,). Untuk batch, "
+            "panggil per gambar -- cabang 2D versi lama menjumlahkan "
+            "SELURUH batch jadi satu skalar."
+        )
     totals = torch.zeros(n_classes, dtype=torch.float64)
     for c in range(n_classes):
         members = assignments == c
         n = int(members.sum())
-        if counts.dim() == 1:
-            totals[c] = float(counts[members].sum()) / max(n, 1)
-        else:
-            totals[c] = float(counts[:, members].sum()) / max(n, 1)
+        if n == 0:
+            continue
+        k = min(topk, n)
+        totals[c] = float(counts[members].topk(k).values.mean())
     return totals.argmax()

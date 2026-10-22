@@ -255,7 +255,7 @@ def run(args: argparse.Namespace) -> int:
             )
             net, res = train(subset, cfg, encoder=enc, net=net)
             print(f"\n  {res.summary()}", flush=True)
-        elif "assignments" in blob:
+        elif "assignments" in blob and not args.reassign:
             print(
                 "  bobot sudah punya assignments; hanya perlu tes",
                 flush=True,
@@ -303,11 +303,14 @@ def run(args: argparse.Namespace) -> int:
     start = 0
     while start < n_assign:
         end = min(start + args.batch, n_assign)
-        _, c = net.present_batch(
-            encode_poisson(
-                subset.images[start:end],
-                enc.start_intensity, enc, generator=gen,
-            )
+        # `learn=False` WAJIB, dan intensitas harus adaptif seperti
+        # evaluasi. Versi lama membiarkan STDP menyala di sini:
+        # assignment dihitung sambil bobot dan theta masih berubah,
+        # jadi neuron dinilai pada jaringan yang berbeda dari yang
+        # diuji -- dan 5000 presentasi ekstra itu bukan bagian dari
+        # training yang dilaporkan.
+        c, _ = present_adaptive(
+            net, subset.images[start:end], enc, gen, learn=False
         )
         train_counts.append(c)
         start = end
@@ -409,6 +412,9 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--continue-epochs", type=int, default=0,
                    help="dengan --resume: lanjutkan training N epoch "
                         "lagi, bukan hanya evaluasi")
+    p.add_argument("--reassign", action="store_true",
+                   help="dengan --resume: abaikan assignments tersimpan, "
+                        "hitung ulang dari data train")
     p.add_argument("--column-sum", type=float, default=78.0)
     p.add_argument("--gate", type=float, default=0.0,
                    help="gagal (exit 1) kalau akurasi di bawah ini")
