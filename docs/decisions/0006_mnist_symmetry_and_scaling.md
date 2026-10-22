@@ -246,10 +246,17 @@ hyperparameter dipilih di validasi TRAIN, diukur sekali di TEST:
 
 | model | matched_cosz | ridge |
 |---|---|---|
-| 400n, 3ep, theta40 | 67.43 | **78.30** |
+| 400n, 3ep, theta80 | 75.52 | **84.11** |
+| 400n, 3ep, theta40 | 67.43 | 78.30 |
 | 400n, 1ep, theta80 | 62.82 | 77.33 |
 | 400n, 1ep, theta80 (fit 10k) | 62.74 | 77.86 |
 | 800n, 1ep, theta80 | 56.70 | 74.61 |
+
+Koreksi penting: kesimpulan sebelumnya ("1 epoch theta80 adalah titik
+terbaik") hanya benar untuk matched filter. Dengan ridge, model 3
+epoch theta80 justru terbaik (84.11%) -- 6 poin di atas model yang
+menang di matched filter. Urutan model berubah menurut readout, jadi
+readout yang lemah bisa menyesatkan pemilihan model.
 
 Ridge menambah ~10 poin. Ini tetap sah: SNN tidak menerima label
 sama sekali; label hanya dipakai untuk fitting readout, persis
@@ -269,6 +276,10 @@ saja bisa menyesatkan.
 - `inhibition_strength` hanya bermakna bersama `n_e`, `theta_max`, dan
   `inhib_connectivity`. Sweep lama yang tidak mencatat ini tidak bisa
   direproduksi.
+- Model 400n/3ep/theta80 dengan ridge mencapai **84.11%** pada test
+  10.000 gambar. Angka ini masih di bawah 89% acuan untuk ukuran yang
+  sama, dan jauh dari 98%. Yang belum terbukti: apakah sisa selisih
+  berasal dari synaptic delay, parameter STDP, atau readout.
 - Target 98% tetap belum tercapai. Angka 89% (400n/3ep) adalah target
   berikutnya yang bisa diuji; 98% baru boleh diklaim kalau ada bukti
   pengukuran.
