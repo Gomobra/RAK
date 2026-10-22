@@ -19,6 +19,10 @@ on:
         description: "Rule STDP yang dicoba (pisah koma)"
         required: false
         default: "variant3,eq3"
+      e_to_i:
+        description: "Daftar bobot E->I (mis. 25,50,100,200). Kosong = default config"
+        required: false
+        default: ""
       eta:
         description: "Learning rate STDP"
         required: false
@@ -64,7 +68,8 @@ jobs:
             --batches ${{ github.event.inputs.batches || '40' }} \
             --strengths "${{ github.event.inputs.strengths || '0,1,2,4' }}" \
             --rules "${{ github.event.inputs.rules || 'variant3,eq3' }}" \
-            --eta ${{ github.event.inputs.eta || '1e-3' }}
+            --eta ${{ github.event.inputs.eta || '1e-3' }} \
+            --e-to-i "${{ github.event.inputs.e_to_i || '' }}"
 
       - name: Upload sweep results
         if: always()

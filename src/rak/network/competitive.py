@@ -129,6 +129,19 @@ class NetworkConfig:
     #: acuan tidak butuh batas karena laju fire-nya 17x lebih rendah.
     theta_max: float = 40.0
 
+    #: Bobot E -> I (satu-satu). DULU disamakan dengan
+    #: `inhibition_strength`, dan itu salah: menaikkan inhibisi ikut
+    #: menguatkan drive ke neuron inhibitor, sehingga gain loop tumbuh
+    #: KUADRATIK terhadap `inhibition_strength`. Sweep 400 neuron
+    #: menunjukkan akibatnya: 1600-3200 stabil, 4800 meledak
+    #: (32.134 spike/presentasi). Ledakan itu bukan sifat jaringan,
+    #: tapi konsekuensi parameter yang tergandeng.
+    #:
+    #: Sekarang dipisah. 1600 adalah nilai lama supaya run yang sudah
+    #: ada tetap bisa direproduksi; nilai ini akan dikalibrasi lewat
+    #: sweep.
+    e_to_i_strength: float = 1600.0
+
     #: Probabilitas koneksi I -> E. Acuan memakai matriks ACAK
     #: (`random/AiAe.npy`), bukan all-to-all seragam.
     #:
@@ -243,7 +256,7 @@ class CompetitiveNetwork:
         # E -> I satu-satu (identitas), I -> E all-to-all negatif.
         self.w_ei = (
             torch.eye(cfg.n_e, cfg.n_inhibitory, device=self.device)
-            * cfg.inhibition_strength
+            * cfg.e_to_i_strength
         )
         # I -> E: besar KONDAKTANSI positif. Arah inhibisi datang
         # dari `e_syn_i = -100 mV` yang lebih rendah dari v_rest, BUKAN

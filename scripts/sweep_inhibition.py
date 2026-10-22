@@ -155,14 +155,18 @@ def run_config(
     n_classes: int,
     assign_samples: int = 1500,
     rule: str = "variant3",
+    e_to_i: float | None = None,
 ) -> dict:
     train_set = load_mnist(data_dir, "train", download=True)
     images = train_set.images
     labels = train_set.labels
     enc = EncoderConfig()
 
+    extra = {} if e_to_i is None else {"e_to_i_strength": e_to_i}
     net = CompetitiveNetwork(
-        NetworkConfig(n_e=n_e, inhibition_strength=strength, rule=rule),
+        NetworkConfig(
+            n_e=n_e, inhibition_strength=strength, rule=rule, **extra
+        ),
         stdp_config=Eq3Config(eta=eta, dt_ms=enc.dt_ms),
         seed=seed,
     )
@@ -227,6 +231,8 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("--batch-size", type=int, default=64)
     p.add_argument("--eta", type=float, default=1e-3)
     p.add_argument("--seed", type=int, default=1)
+    p.add_argument("--e-to-i", default="",
+                   help="daftar bobot E->I; kosong = pakai default config")
     p.add_argument("--rules", default="variant3,eq3",
                    help="rule STDP yang dicoba (pisah koma)")
     p.add_argument("--assign", type=int, default=1500,
@@ -234,14 +240,19 @@ def main(argv: list[str] | None = None) -> int:
     args = p.parse_args(argv)
 
     strengths = [float(x) for x in args.strengths.split(",")]
+    e_to_i_values = (
+        [None] if not args.e_to_i else [float(x) for x in args.e_to_i.split(",")]
+    )
     rules = args.rules.split(",")
     out_dir = Path(args.out)
     out_dir.mkdir(parents=True, exist_ok=True)
 
     rows = []
-    print(f"{'rule':>10} {'strength':>9} {'deco':>7} {'colcorr':>8} "
-          f"{'kelas':>6} {'mati':>5} {'spike/pres':>11}", flush=True)
-    for rule in rules:
+    print(f"{'e2i':>7} {'rule':>10} {'strength':>9} {'deco':>7} "
+          f"{'colcorr':>8} {'kelas':>6} {'mati':>5} {'spike/pres':>11}",
+          flush=True)
+    for e2i in e_to_i_values:
+     for rule in rules:
       for s in strengths:
         t0 = time.perf_counter()
         row = run_config(
@@ -249,11 +260,13 @@ def main(argv: list[str] | None = None) -> int:
             n_e=args.neurons, batches=args.batches,
             batch_size=args.batch_size, eta=args.eta,
             seed=args.seed, n_classes=10, assign_samples=args.assign,
-            rule=rule,
+            rule=rule, e_to_i=e2i,
         )
+        row["e_to_i_strength"] = e2i
         row["seconds"] = round(time.perf_counter() - t0, 1)
         rows.append(row)
         print(
+            f"{('-' if e2i is None else f'{e2i:.0f}'):>7} "
             f"{rule:>10} {s:>9.1f} {row['final_deco']:>7.3f} "
             f"{row['final_col_corr']:>8.3f} {row['classes_used']:>6d} "
             f"{row['dead_neurons']:>5d} "
