@@ -199,7 +199,8 @@ tidak ada fitur, tapi karena sebagian neuron tidak terpakai.
 | 400n, 3 epoch, readout mean | 45.94% | 2.0 | min 10/kelas |
 | 400n, 3 epoch, readout topk | 53.06% | 2.0 | min 11/kelas |
 | 400n, 3 epoch, readout matched_cosz | 61.59% | 2.0 | min 11/kelas |
-| 400n, 1 epoch, theta_max=80 | **62.76%** | 2.0 | min 21/kelas |
+| 400n, 1 epoch, theta_max=80 | 62.76% | 2.0 | min 21/kelas |
+| 400n, 1 epoch, theta_max=80, 5 trials | **71.68%** | 2.0 | min 21/kelas |
 | 400n, 3 epoch, theta_max=80 | 59.82% | 2.0 | min 14/kelas |
 
 ## theta_max: plafon yang mengikat
@@ -221,6 +222,21 @@ Tetapi 3 epoch dengan `theta_max=80` justru turun ke 59.82%: theta
 terus naik, laju turun ke 22.6 spike/presentasi, dan sebagian kelas
 kehilangan neuron (kelas 9 hanya 14). Jadi 1 epoch adalah titik
 terbaik yang terukur; menambah epoch tidak otomatis menambah akurasi.
+
+## Encoder Poisson: satu sampel itu berisik
+
+`encode_poisson` membangkitkan spike secara stokastik. Satu presentasi
+per gambar berarti pola spike yang dipakai classifier mengandung
+varians sampling, bukan hanya informasi bentuk.
+
+Menjumlahkan 5 presentasi untuk gambar yang sama (tanpa menyentuh
+bobot, tanpa label) menaikkan akurasi 62.76% -> **71.68%** pada test
+10.000 gambar. Ini bukan trik evaluasi yang menyembunyikan kelemahan:
+classifier tetap sama, hanya estimasi pola yang lebih stabil. Biaya
+waktunya linear terhadap jumlah percobaan.
+
+Recall masih timpang: kelas 9 terendah (49.2%), kelas 0/1/2 tertinggi
+(~87%).
 
 ## Konsekuensi
 
