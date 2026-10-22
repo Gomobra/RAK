@@ -201,6 +201,7 @@ def main(argv: list[str] | None = None) -> int:
     # per kelas. Beberapa kelas sistematis memberi skor lebih tinggi
     # hanya karena komposisi neuronnya, bukan karena cocok.
     def _scores(counts: torch.Tensor) -> torch.Tensor:
+        counts = counts.to(torch.float64)
         c = counts - counts.mean(dim=1, keepdim=True)
         c = c / c.std(dim=1, keepdim=True).clamp_min(1e-9)
         r = rates - rates.mean(dim=1, keepdim=True)
