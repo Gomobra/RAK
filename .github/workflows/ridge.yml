@@ -26,6 +26,10 @@ on:
         description: "inhibition_strength saat training"
         required: false
         default: "1600"
+      e_to_i:
+        description: "e_to_i_strength saat training (checkpoint lama tidak menyimpannya)"
+        required: false
+        default: "1600"
 
 jobs:
   ridge:
@@ -61,6 +65,7 @@ jobs:
             --test-samples ${{ github.event.inputs.test_samples }} \
             --trials ${{ github.event.inputs.trials }} \
             --inhibition ${{ github.event.inputs.inhibition }} \
+            --e-to-i ${{ github.event.inputs.e_to_i || '1600' }} \
             --out runs/ridge/ridge.json | tee runs/ridge/ridge.txt
 
       - name: Ringkasan

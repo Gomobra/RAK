@@ -104,6 +104,7 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--batch", type=int, default=64)
     ap.add_argument("--seed", type=int, default=0)
     ap.add_argument("--inhibition", type=float, default=1600.0)
+    ap.add_argument("--e-to-i", type=float, default=1600.0)
     ap.add_argument("--out", default="")
     a = ap.parse_args(argv)
 
@@ -111,7 +112,12 @@ def main(argv: list[str] | None = None) -> int:
     state = blob["net"]
     n_e = int(state["w_e"].shape[1])
     net = CompetitiveNetwork(
-        NetworkConfig(n_e=n_e, inhibition_strength=a.inhibition, rule="variant3"),
+        NetworkConfig(
+            n_e=n_e,
+            inhibition_strength=a.inhibition,
+            e_to_i_strength=a.e_to_i,
+            rule="variant3",
+        ),
         seed=a.seed,
     )
     net.load_state_dict(state)
