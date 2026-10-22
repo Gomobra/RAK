@@ -18,6 +18,7 @@ kelas) dan untuk mengukur akurasi.
 | 6 | 400n, 3 epoch, theta_max=40 | ridge, 5 trials | 78.30% |
 | 7 | **400n, 3 epoch, theta_max=80** | **ridge, 5 trials** | **84.11%** |
 | 8 | 800n, 1 epoch, theta_max=80 | ridge, 5 trials | 74.61% |
+| 9 | **ensemble 3 model 400n** | **ridge, 5 trials** | **86.80%** |
 
 Catatan:
 
@@ -28,7 +29,11 @@ Catatan:
 - Ridge adalah classifier linear yang dilatih pada spike count data
   TRAIN saja (80% fit, 20% validasi untuk memilih alpha). Data test
   tidak pernah dipakai untuk memilih apa pun.
-- Konfigurasi #7 adalah model terbaik saat ini. Receptive field-nya
+- Konfigurasi #9 adalah hasil terbaik saat ini: ensemble tiga model
+  400 neuron (3ep/theta80, 3ep/theta40, 1ep/theta80), fitur spike
+  count digabung (1200 dimensi) lalu ridge. Validasi 85.60, test
+  86.80.
+- Konfigurasi #7 adalah model tunggal terbaik. Receptive field-nya
   ada di `receptive_fields.png`: hampir semua neuron adalah template
   digit yang terbaca, dengan sisa kebingungan 4/9, 7/1, dan 3/8.
 

@@ -251,6 +251,7 @@ hyperparameter dipilih di validasi TRAIN, diukur sekali di TEST:
 | 400n, 1ep, theta80 | 62.82 | 77.33 |
 | 400n, 1ep, theta80 (fit 10k) | 62.74 | 77.86 |
 | 800n, 1ep, theta80 | 56.70 | 74.61 |
+| ensemble 3 model 400n | 75.52 | **86.80** |
 
 Koreksi penting: kesimpulan sebelumnya ("1 epoch theta80 adalah titik
 terbaik") hanya benar untuk matched filter. Dengan ridge, model 3
