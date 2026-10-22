@@ -238,6 +238,29 @@ waktunya linear terhadap jumlah percobaan.
 Recall masih timpang: kelas 9 terendah (49.2%), kelas 0/1/2 tertinggi
 (~87%).
 
+## Readout linear: prototipe bukan batas atas
+
+Prototipe kelas adalah classifier linear dengan bobot tulisan tangan.
+Ridge regression pada spike count yang sama, dilatih di TRAIN,
+hyperparameter dipilih di validasi TRAIN, diukur sekali di TEST:
+
+| model | matched_cosz | ridge |
+|---|---|---|
+| 400n, 3ep, theta40 | 67.43 | **78.30** |
+| 400n, 1ep, theta80 | 62.82 | 77.33 |
+| 400n, 1ep, theta80 (fit 10k) | 62.74 | 77.86 |
+| 800n, 1ep, theta80 | 56.70 | 74.61 |
+
+Ridge menambah ~10 poin. Ini tetap sah: SNN tidak menerima label
+sama sekali; label hanya dipakai untuk fitting readout, persis
+seperti assignment kelas pada acuan. Yang berubah hanya cara
+mengubah spike count menjadi label.
+
+Temuan penting: model yang menang di matched filter (theta80 1ep)
+KALAH dari model 3 epoch theta40 begitu readout-nya ridge. Urutan
+model berubah menurut readout, jadi memilih model dari satu readout
+saja bisa menyesatkan.
+
 ## Konsekuensi
 
 - Semua laporan harus menyertakan intensitas evaluasi. Akurasi tanpa
