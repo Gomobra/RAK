@@ -502,6 +502,11 @@ class CompetitiveNetwork:
         return {
             "w_e": self.w_e.detach().cpu(),
             "w_ie": self.w_ie.detach().cpu(),
+            # `w_ei` juga tidak dipelajari, tapi ikut menentukan loop
+            # gain. Tanpa dia, checkpoint 800 neuron yang dilatih
+            # dengan e_to_i=800 dievaluasi memakai 1600 -- jaringan
+            # yang berbeda dari yang diukur saat training.
+            "w_ei": self.w_ei.detach().cpu(),
             "theta": self.theta.detach().cpu(),
             "n_presentations": self.n_presentations,
         }
@@ -510,6 +515,8 @@ class CompetitiveNetwork:
         self.w_e = state["w_e"].to(self.device)
         if "w_ie" in state:
             self.w_ie = state["w_ie"].to(self.device)
+        if "w_ei" in state:
+            self.w_ei = state["w_ei"].to(self.device)
         self.theta = state["theta"].to(self.device)
         self.n_presentations = state.get("n_presentations", 0)
 
