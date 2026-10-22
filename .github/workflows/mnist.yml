@@ -11,6 +11,10 @@ on:
         description: "Jumlah epoch atas training set"
         required: false
         default: "1"
+      seed:
+        description: "Seed inisialisasi bobot dan sampling Poisson"
+        required: false
+        default: "1"
       eta:
         description: "Learning rate STDP"
         required: false
@@ -152,6 +156,7 @@ jobs:
           python scripts/run_mnist.py \
             --neurons ${{ github.event.inputs.neurons || '100' }} \
             --epochs ${{ github.event.inputs.epochs || '1' }} \
+            --seed ${{ github.event.inputs.seed || '1' }} \
             --eta ${{ github.event.inputs.eta || '1e-3' }} \
             --limit ${{ github.event.inputs.limit || '0' }} \
             --inhibition ${{ github.event.inputs.inhibition || '800' }} \
