@@ -97,7 +97,12 @@ def _recall(pred: torch.Tensor, y: torch.Tensor) -> list[float]:
 
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser()
-    ap.add_argument("--weights", required=True)
+    ap.add_argument(
+        "--weights",
+        required=True,
+        nargs="+",
+        help="satu atau lebih checkpoint; fitur digabung (ensemble)",
+    )
     ap.add_argument("--train-samples", type=int, default=5000)
     ap.add_argument("--test-samples", type=int, default=10000)
     ap.add_argument("--trials", type=int, default=5)
@@ -108,30 +113,42 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--out", default="")
     a = ap.parse_args(argv)
 
-    blob = torch.load(a.weights, map_location="cpu", weights_only=False)
-    state = blob["net"]
-    n_e = int(state["w_e"].shape[1])
-    net = CompetitiveNetwork(
-        NetworkConfig(
-            n_e=n_e,
-            inhibition_strength=a.inhibition,
-            e_to_i_strength=a.e_to_i,
-            rule="variant3",
-        ),
-        seed=a.seed,
-    )
-    net.load_state_dict(state)
-    enc = EncoderConfig()
-
     train = load_mnist(split="train")
     test = load_mnist(split="test")
     n_tr = min(a.train_samples, int(train.images.shape[0]))
     n_te = min(a.test_samples, int(test.images.shape[0]))
 
-    tr = _counts(net, train.images[:n_tr], enc, a.batch, a.seed + 1, a.trials)
-    te = _counts(net, test.images[:n_te], enc, a.batch, a.seed + 2, a.trials)
+    enc = EncoderConfig()
+    nets = []
+    tr_parts, te_parts = [], []
+    for path in a.weights:
+        blob = torch.load(path, map_location="cpu", weights_only=False)
+        state = blob["net"]
+        n_e = int(state["w_e"].shape[1])
+        net = CompetitiveNetwork(
+            NetworkConfig(
+                n_e=n_e,
+                inhibition_strength=a.inhibition,
+                e_to_i_strength=a.e_to_i,
+                rule="variant3",
+            ),
+            seed=a.seed,
+        )
+        net.load_state_dict(state)
+        nets.append(net)
+        tr_parts.append(
+            _counts(net, train.images[:n_tr], enc, a.batch, a.seed + 1, a.trials)
+        )
+        te_parts.append(
+            _counts(net, test.images[:n_te], enc, a.batch, a.seed + 2, a.trials)
+        )
+        print(f"model {len(nets)}: {n_e} neuron, {path}")
+
+    tr = torch.cat(tr_parts, dim=1)
+    te = torch.cat(te_parts, dim=1)
     tr_y = train.labels[:n_tr]
     te_y = test.labels[:n_te]
+    n_e = int(tr.shape[1])
 
     # Split TRAIN: 80% fit, 20% validasi.
     g = torch.Generator().manual_seed(a.seed + 3)
@@ -142,9 +159,9 @@ def main(argv: list[str] | None = None) -> int:
     results: dict[str, dict[str, float]] = {}
 
     # --- baseline: prototipe kelas + matched filter (tanpa fit) ------
-    proto = class_prototypes(tr[fit_idx], tr_y[fit_idx])
-    pv = torch.tensor([classify_matched(x, proto) for x in tr[val_idx]])
-    pt = torch.tensor([classify_matched(x, proto) for x in te])
+    proto = class_prototypes(tr_parts[0][fit_idx], tr_y[fit_idx])
+    pv = torch.tensor([classify_matched(x, proto) for x in tr_parts[0][val_idx]])
+    pt = torch.tensor([classify_matched(x, proto) for x in te_parts[0]])
     results["matched_cosz"] = {
         "val": round(_acc(pv, tr_y[val_idx]), 2),
         "test": round(_acc(pt, te_y), 2),

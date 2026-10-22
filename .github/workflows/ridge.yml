@@ -10,6 +10,10 @@ on:
       run_id:
         description: "Run ID yang artifact-nya berisi weights.pt"
         required: true
+      run_id_2:
+        description: "Opsional: run ID kedua (fitur digabung jadi ensemble)"
+        required: false
+        default: ""
       train_samples:
         description: "Jumlah gambar TRAIN untuk fit+validasi readout"
         required: false
@@ -52,15 +56,23 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh run download ${{ github.event.inputs.run_id }} -D runs/ridge
+          gh run download ${{ github.event.inputs.run_id }} -D runs/ridge/a
+          if [ -n "${{ github.event.inputs.run_id_2 }}" ]; then
+            gh run download ${{ github.event.inputs.run_id_2 }} -D runs/ridge/b
+          fi
           find runs/ridge -name weights.pt -not -path "*smoke*"
 
       - name: Fit readout
         run: |
           set -o pipefail
-          W=$(find runs/ridge -name weights.pt -not -path "*smoke*" | head -1)
+          W=$(find runs/ridge/a -name weights.pt -not -path "*smoke*" | head -1)
+          EXTRA=""
+          if [ -n "${{ github.event.inputs.run_id_2 }}" ]; then
+            W2=$(find runs/ridge/b -name weights.pt -not -path "*smoke*" | head -1)
+            EXTRA="$W2"
+          fi
           python scripts/ridge_readout.py \
-            --weights "$W" \
+            --weights "$W" $EXTRA \
             --train-samples ${{ github.event.inputs.train_samples }} \
             --test-samples ${{ github.event.inputs.test_samples }} \
             --trials ${{ github.event.inputs.trials }} \
