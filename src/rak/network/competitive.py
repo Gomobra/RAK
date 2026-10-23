@@ -420,15 +420,11 @@ class CompetitiveNetwork:
     ) -> tuple[Tensor, Tensor]:
         """Jalankan satu batch presentasi.
 
-        Args:
-            z_pre: (n_steps, B, n_in) spike input.
-            rest_steps: jumlah step zero-input setelah presentasi
-                (peluruhan conductance). None = pakai ``cfg.rest_ms``.
-
-        Returns:
-            (z_e, spike_counts) dengan `z_e` (n_steps, B, n_e) dan
-            `spike_counts` (B, n_e) akumulasi selama presentasi
-            (step rest TIDAK dihitung).
+        Jika ``delay_max_in_ms > 0``, input ke neuron eksitasi
+        tertunda sesuai ``delay_steps`` (per neuron), dan STDP
+        memakai spike/trace yang tertunda juga (bukan aproksimasi
+        forward-only). Rest (zero-input) ikut menjalankan STDP trace
+        decay.
         """
         cfg = self.config
         n_steps, batch, _ = z_pre.shape
@@ -454,24 +450,79 @@ class CompetitiveNetwork:
         zero_i = torch.zeros(batch, cfg.n_inhibitory, device=self.device)
         zero_ge = torch.zeros(batch, cfg.n_e, device=self.device)
 
-        # buffer riwayat input untuk delay (hanya kalau delay aktif)
-        if D > 0:
-            buf = torch.zeros(
-                D + 1, batch, cfg.n_in, device=self.device, dtype=z_pre.dtype
-            )
+        gamma_pre = float(self.v3_config.gamma_pre) if self.v3_config is not None else float(torch.exp(torch.tensor(-cfg.dt_ms / 20.0)))
+        gamma_post1 = float(self.v3_config.gamma_post1) if self.v3_config is not None else float(torch.exp(torch.tensor(-cfg.dt_ms / 20.0)))
+        gamma_post2 = float(self.v3_config.gamma_post2) if self.v3_config is not None else float(torch.exp(torch.tensor(-cfg.dt_ms / 40.0)))
+        nu_pre = self.v3_config.nu_pre if self.v3_config is not None else 1e-4
+        nu_post = self.v3_config.nu_post if self.v3_config is not None else 1e-2
 
+        # state trace (per-sampel). Hanya dibutuhkan saat learn=True
+        # (STDP). Saat evaluasi (learn=False) jejak tidak dipakai, jadi
+        # inisialisasi ringan supaya tidak ada mismatch bentuk batch.
+        if learn:
+            if self.stdp_state.pre.dim() == 1:
+                pre_trace = self.stdp_state.pre.unsqueeze(0).expand(batch, -1).clone()
+            else:
+                pre_trace = self.stdp_state.pre
+                if pre_trace.shape[0] != batch:
+                    pre_trace = pre_trace[:1].expand(batch, -1).clone()
+            if self.stdp_state.post1.dim() == 1:
+                post1 = self.stdp_state.post1.unsqueeze(0).expand(batch, -1).clone()
+                post2 = self.stdp_state.post2.unsqueeze(0).expand(batch, -1).clone()
+            else:
+                post1 = self.stdp_state.post1
+                post2 = self.stdp_state.post2
+                if post1.shape[0] != batch:
+                    post1 = post1[:1].expand(batch, -1).clone()
+                    post2 = post2[:1].expand(batch, -1).clone()
+        else:
+            pre_trace = torch.zeros(batch, cfg.n_in, device=self.device)
+            post1 = torch.zeros(batch, cfg.n_e, device=self.device)
+            post2 = torch.zeros(batch, cfg.n_e, device=self.device)
+
+        # buffer riwayat untuk delay
+        L = D + 1 if D > 0 else 1
+        if D > 0:
+            buf_zp = torch.zeros(L, batch, cfg.n_in, device=self.device, dtype=z_pre.dtype)
+            buf_pre = torch.zeros(L, batch, cfg.n_in, device=self.device, dtype=torch.float32)
+
+        def _step(zp, z_e, learn_flag):
+            nonlocal pre_trace, post1, post2
+            if D > 0:
+                # zp_delayed & pre_delayed dibangun oleh pemanggil
+                pass
+            # conductance drive ditangani di luar; fungsi ini hanya STDP
+            if not learn_flag:
+                return
+            # decay post traces
+            post1_d = gamma_post1 * post1
+            post2_d = gamma_post2 * post2
+            fired = (z_e > 0)
+            if self.rule != "variant3":
+                # eq3 path tidak didukung dengan delay; fallback ke variant3
+                pass
+            # LTP/LTD dengan delay (zp_delayed, pre_delayed) atau
+            # tanpa delay (zp, pre_trace decayed)
+            if D > 0:
+                # pemanggil harus menyediakan zp_d, pre_d_delayed
+                pass
+
+        # --- loop presentasi ---
         for t in range(n_steps):
             zp = z_pre[t]  # (B, n_in)
 
             if D > 0:
-                buf[t % (D + 1)] = zp
-                # zp_delayed: (B, n_e, n_in), neuron j pakai input
-                # dari t - delay_steps[j]
-                idx = (t - self.delay_steps) % (D + 1)  # (n_e,)
-                zp_delayed = buf[idx].permute(1, 0, 2)  # (B, n_e, n_in)
-                ge_drive = torch.einsum("bni,ni->bn", zp_delayed, self.w_e)
+                buf_zp[t % L] = zp
+                pre_d_cur = gamma_pre * pre_trace  # (B, n_in)
+                buf_pre[t % L] = pre_d_cur
+                idx = (t - self.delay_steps) % L  # (n_e,)
+                zp_d = buf_zp[idx].permute(1, 0, 2)  # (B, n_e, n_in)
+                pre_d_delayed = buf_pre[idx].permute(1, 0, 2)  # (B, n_e, n_in)
+                ge_drive = torch.einsum("bni,ni->bn", zp_d, self.w_e)
             else:
-                ge_drive = zp @ self.w_e  # (B, n_e)
+                zp_d = None
+                pre_d_delayed = None
+                ge_drive = zp @ self.w_e
 
             gi_drive = (
                 self.z_i_prev @ self.w_ie
@@ -485,29 +536,35 @@ class CompetitiveNetwork:
             z_e, self.state_e = self.exc.step(
                 ge_drive, gi_drive, self.state_e, v_th=v_th_eff
             )
-
             z_i, self.state_i = self.inh.step(
                 z_e @ self.w_ei, zero_i, self.state_i
             )
 
-            # STDP. Saat delay aktif, LTP memakai trace pre yang
-            # tertunda; LTD memakai spike input yang tertunda. Untuk
-            # menjaga kecepatan dan kestabilan, kita pakai path
-            # undelayed untuk trace (varian 3-trace) -- delay tetap
-            # bekerja di forward pass (ge_drive), yang merupakan
-            # sumber utama dekorelasi temporal.
-            if not learn:
-                pass
-            elif self.rule == "variant3":
-                self.w_e, self.stdp_state = variant3_step(
-                    zp, z_e, self.w_e, self.stdp_state, self.v3_config
-                )
-            else:
-                self.w_e, self.stdp_state = eq3_step(
-                    zp, z_e, self.w_e, self.stdp_state, self.stdp_config
-                )
-
             if learn:
+                post1_d = gamma_post1 * post1
+                post2_d = gamma_post2 * post2
+                fired = (z_e > 0)
+                if D > 0:
+                    ltp = torch.einsum(
+                        "bni,bn->in", pre_d_delayed, post2_d * fired.to(pre_d_delayed.dtype)
+                    )
+                    ltd = torch.einsum("bni,bn->in", zp_d, post1_d)
+                else:
+                    # variant3 batched: pre_d = gamma*pre (B, n_in)
+                    pre_d = gamma_pre * pre_trace
+                    ltp = pre_d.T @ (post2_d * fired.to(pre_d.dtype))
+                    ltd = zp.T @ post1_d
+                dw = nu_post * ltp - nu_pre * ltd
+                self.w_e = (self.w_e + dw).clamp(
+                    self.v3_config.w_min if self.v3_config else 0.0,
+                    self.v3_config.w_max if self.v3_config else 1.0,
+                )
+                # bump post traces
+                post1 = post1_d + z_e
+                post2 = post2_d + z_e
+                # update pre trace (undelayed, evolves with current input)
+                pre_trace = gamma_pre * pre_trace + zp
+
                 self.theta_batch = (
                     gamma_theta * self.theta_batch + cfg.theta_plus * z_e
                 )
@@ -517,22 +574,23 @@ class CompetitiveNetwork:
                 z_e_hist[t] = z_e
             counts += z_e
 
-        # --- rest: zero input, conductance meluruh, trace meluruh ---
-        # Acuan menjalankan 150 ms zero-input antar gambar. Kita tidak
-        # reset state antar gambar di sini (itu di init_batch), tapi
-        # conductance dan membran sempat meluruh di dalam presentasi.
-        # STDP trace ikut meluruh (variant3 early-return saat tidak ada
-        # spike; kalau z_e fire dari sisa membran, LTP dengan trace
-        # yang sudah meluruh -- sesuai acuan).
-        for _ in range(rest_steps):
+        # --- rest: zero input (conductance + membran meluruh) ---
+        for r in range(rest_steps):
+            t = n_steps + r
             zp = torch.zeros(batch, cfg.n_in, device=self.device, dtype=z_pre.dtype)
             if D > 0:
-                buf[0] = zp  # slot terbaru kosong
-                idx = ( (n_steps + _) - self.delay_steps) % (D + 1)
-                zp_delayed = buf[idx].permute(1, 0, 2)
-                ge_drive = torch.einsum("bni,ni->bn", zp_delayed, self.w_e)
+                buf[t % L] = zp
+                pre_d_cur = gamma_pre * pre_trace
+                buf_pre[t % L] = pre_d_cur
+                idx = (t - self.delay_steps) % L
+                zp_d = buf_zp[idx].permute(1, 0, 2)
+                pre_d_delayed = buf_pre[idx].permute(1, 0, 2)
+                ge_drive = torch.einsum("bni,ni->bn", zp_d, self.w_e)
             else:
+                zp_d = None
+                pre_d_delayed = None
                 ge_drive = zp @ self.w_e
+
             gi_drive = self.z_i_prev @ self.w_ie
             v_th_eff = (
                 self.theta_batch - cfg.theta_offset + float(self.exc.v_th)
@@ -543,21 +601,35 @@ class CompetitiveNetwork:
             z_i, self.state_i = self.inh.step(
                 z_e @ self.w_ei, zero_i, self.state_i
             )
+
             if learn:
-                if self.rule == "variant3":
-                    self.w_e, self.stdp_state = variant3_step(
-                        zp, z_e, self.w_e, self.stdp_state, self.v3_config
+                post1_d = gamma_post1 * post1
+                post2_d = gamma_post2 * post2
+                fired = (z_e > 0)
+                if D > 0:
+                    ltp = torch.einsum(
+                        "bni,bn->in", pre_d_delayed, post2_d * fired.to(pre_d_delayed.dtype)
                     )
+                    ltd = torch.einsum("bni,bn->in", zp_d, post1_d)
                 else:
-                    self.w_e, self.stdp_state = eq3_step(
-                        zp, z_e, self.w_e, self.stdp_state, self.stdp_config
-                    )
+                    pre_d = gamma_pre * pre_trace
+                    ltp = pre_d.T @ (post2_d * fired.to(pre_d.dtype))
+                    ltd = zp.T @ post1_d
+                dw = nu_post * ltp - nu_pre * ltd
+                self.w_e = (self.w_e + dw).clamp(
+                    self.v3_config.w_min if self.v3_config else 0.0,
+                    self.v3_config.w_max if self.v3_config else 1.0,
+                )
+                post1 = post1_d + z_e
+                post2 = post2_d + z_e
+                pre_trace = gamma_pre * pre_trace + zp
+
                 self.theta_batch = (
                     gamma_theta * self.theta_batch + cfg.theta_plus * z_e
                 )
+
             self.z_i_prev = z_i
-            # TIDAK dihitung ke counts / z_e_hist (rest tidak masuk
-            # assignment, sesuai acuan).
+            # rest TIDAK dihitung ke counts / hist
 
         # theta lintas presentasi.
         if learn:
@@ -573,6 +645,13 @@ class CompetitiveNetwork:
                 "homeostasis meledak, bukan sekadar nilai besar: "
                 "periksa inisialisasi theta_batch terhadap self.theta."
             )
+
+        # simpan state trace kembali (per-sampel) -- hanya saat learn,
+        # supaya evaluasi tidak menimpa jejak training.
+        if learn:
+            self.stdp_state.pre = pre_trace
+            self.stdp_state.post1 = post1
+            self.stdp_state.post2 = post2
 
         scale = ScalingConfig(target_sum=cfg.column_sum,
                               soft_power=cfg.soft_power)
