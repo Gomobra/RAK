@@ -60,7 +60,7 @@ class TrainConfig:
     epochs: int = 1
 
     #: Jumlah gambar per batch presentasi.
-    batch_size: int = 64
+    batch_size: int = 128
 
     #: Batas pengulangan untuk intensitas adaptif per gambar.
     max_repeat: int = 6

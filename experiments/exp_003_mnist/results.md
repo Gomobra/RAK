@@ -95,3 +95,19 @@ Readout:
 gh workflow run ridge.yml -f run_id=<RUN_ID> -f train_samples=5000 \
   -f test_samples=10000 -f trials=5 -f inhibition=1600 -f e_to_i=1600
 ```
+
+## theta_plus=0.05 gagal (run validasi 2026-10-23)
+
+Kombo acuan (theta_plus=0.05, rest 150 ms, delay 10 ms, theta_max=100, 3 epoch)
+memberi **32.8%** (1 trial) dengan 15.86 spike/presentasi dan recall
+runtuh (kelas 7: 9.1%, kelas 4: 11.8%).
+
+Penyebab: laju fire kita masih lebih tinggi dari acuan (0.04 Hz),
+sehingga theta_plus=0.05 mendorong theta melewati theta_max dan
+menekan neuron terlalu kuat. Nilai 0.0125 yang kita pakai sebelumnya
+memang lebih cocok untuk rezim laju kita. Obat gejala 0.0125
+tetap dipakai; yang perlu diperbaiki adalah akar (delay + rest),
+bukan theta.
+
+Eksperimen berikutnya: rest 150 ms + delay 10 ms + theta_plus=0.0125
+(theta_max=80), 1 epoch, untuk mengisolasi efek rest+delay saja.
