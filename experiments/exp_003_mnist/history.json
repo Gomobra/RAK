@@ -2,15 +2,17 @@
   "config": {
     "n_e": 400,
     "n_in": 784,
-    "epochs": 3,
+    "epochs": 1,
     "batch_size": 64,
     "max_repeat": 6,
     "seed": 1,
     "inhibition_strength": 1600.0,
     "rule": "variant3",
-    "theta_plus": 0.0125,
-    "theta_max": 80.0,
+    "theta_plus": 0.05,
+    "theta_max": 100.0,
     "e_to_i_strength": 1600.0,
+    "delay_max_in_ms": 0.0,
+    "rest_ms": 0.0,
     "eta": 0.001,
     "column_sum": 78.0,
     "checkpoint_every": 5000,
@@ -21,2875 +23,955 @@
     {
       "presentations": 512,
       "epoch": 1,
-      "rate_per_s": 43.64,
-      "eta_hours": 1.14,
-      "mean_spikes": 82.1,
-      "dead": 1
+      "rate_per_s": 31.42,
+      "eta_hours": 0.53,
+      "mean_spikes": 42.7,
+      "dead": 0
     },
     {
       "presentations": 1024,
       "epoch": 1,
-      "rate_per_s": 43.73,
-      "eta_hours": 1.14,
-      "mean_spikes": 89.5,
+      "rate_per_s": 30.03,
+      "eta_hours": 0.55,
+      "mean_spikes": 40.7,
       "dead": 0
     },
     {
       "presentations": 1536,
       "epoch": 1,
-      "rate_per_s": 43.54,
-      "eta_hours": 1.14,
-      "mean_spikes": 91.5,
+      "rate_per_s": 29.35,
+      "eta_hours": 0.55,
+      "mean_spikes": 38.8,
       "dead": 0
     },
     {
       "presentations": 2048,
       "epoch": 1,
-      "rate_per_s": 43.18,
-      "eta_hours": 1.14,
-      "mean_spikes": 90.2,
+      "rate_per_s": 28.34,
+      "eta_hours": 0.57,
+      "mean_spikes": 37.1,
       "dead": 0
     },
     {
       "presentations": 2560,
       "epoch": 1,
-      "rate_per_s": 42.98,
-      "eta_hours": 1.15,
-      "mean_spikes": 86.9,
+      "rate_per_s": 27.05,
+      "eta_hours": 0.59,
+      "mean_spikes": 35.5,
       "dead": 0
     },
     {
       "presentations": 3008,
       "epoch": 1,
-      "rate_per_s": 42.9,
-      "eta_hours": 1.15,
-      "mean_spikes": 82.9,
+      "rate_per_s": 26.23,
+      "eta_hours": 0.6,
+      "mean_spikes": 34.1,
       "dead": 0
     },
     {
       "presentations": 3520,
       "epoch": 1,
-      "rate_per_s": 42.85,
-      "eta_hours": 1.14,
-      "mean_spikes": 78.7,
+      "rate_per_s": 25.29,
+      "eta_hours": 0.62,
+      "mean_spikes": 32.7,
       "dead": 0
     },
     {
       "presentations": 4032,
       "epoch": 1,
-      "rate_per_s": 42.87,
-      "eta_hours": 1.14,
-      "mean_spikes": 75.4,
+      "rate_per_s": 24.56,
+      "eta_hours": 0.63,
+      "mean_spikes": 31.5,
       "dead": 0
     },
     {
       "presentations": 4544,
       "epoch": 1,
-      "rate_per_s": 43.06,
-      "eta_hours": 1.13,
-      "mean_spikes": 73.1,
+      "rate_per_s": 23.62,
+      "eta_hours": 0.65,
+      "mean_spikes": 30.5,
       "dead": 0
     },
     {
       "presentations": 5056,
       "epoch": 1,
-      "rate_per_s": 43.27,
-      "eta_hours": 1.12,
-      "mean_spikes": 70.5,
+      "rate_per_s": 22.85,
+      "eta_hours": 0.67,
+      "mean_spikes": 29.5,
       "dead": 0
     },
     {
       "presentations": 5504,
       "epoch": 1,
-      "rate_per_s": 43.5,
-      "eta_hours": 1.11,
-      "mean_spikes": 68.5,
+      "rate_per_s": 22.31,
+      "eta_hours": 0.68,
+      "mean_spikes": 28.7,
       "dead": 0
     },
     {
       "presentations": 6016,
       "epoch": 1,
-      "rate_per_s": 43.69,
-      "eta_hours": 1.11,
-      "mean_spikes": 66.6,
+      "rate_per_s": 21.88,
+      "eta_hours": 0.69,
+      "mean_spikes": 27.9,
       "dead": 0
     },
     {
       "presentations": 6528,
       "epoch": 1,
-      "rate_per_s": 43.86,
-      "eta_hours": 1.1,
-      "mean_spikes": 65.0,
+      "rate_per_s": 21.21,
+      "eta_hours": 0.7,
+      "mean_spikes": 27.2,
       "dead": 0
     },
     {
       "presentations": 7040,
       "epoch": 1,
-      "rate_per_s": 43.86,
-      "eta_hours": 1.1,
-      "mean_spikes": 63.5,
+      "rate_per_s": 20.71,
+      "eta_hours": 0.71,
+      "mean_spikes": 26.6,
       "dead": 0
     },
     {
       "presentations": 7552,
       "epoch": 1,
-      "rate_per_s": 43.97,
-      "eta_hours": 1.09,
-      "mean_spikes": 62.2,
+      "rate_per_s": 20.27,
+      "eta_hours": 0.72,
+      "mean_spikes": 26.0,
       "dead": 0
     },
     {
       "presentations": 8000,
       "epoch": 1,
-      "rate_per_s": 44.07,
-      "eta_hours": 1.08,
-      "mean_spikes": 61.1,
+      "rate_per_s": 19.89,
+      "eta_hours": 0.73,
+      "mean_spikes": 25.6,
       "dead": 0
     },
     {
       "presentations": 8512,
       "epoch": 1,
-      "rate_per_s": 43.98,
-      "eta_hours": 1.08,
-      "mean_spikes": 60.0,
+      "rate_per_s": 19.47,
+      "eta_hours": 0.73,
+      "mean_spikes": 25.2,
       "dead": 0
     },
     {
       "presentations": 9024,
       "epoch": 1,
-      "rate_per_s": 43.93,
-      "eta_hours": 1.08,
-      "mean_spikes": 59.0,
+      "rate_per_s": 19.12,
+      "eta_hours": 0.74,
+      "mean_spikes": 24.7,
       "dead": 0
     },
     {
       "presentations": 9536,
       "epoch": 1,
-      "rate_per_s": 43.86,
-      "eta_hours": 1.08,
-      "mean_spikes": 58.0,
+      "rate_per_s": 18.73,
+      "eta_hours": 0.75,
+      "mean_spikes": 24.3,
       "dead": 0
     },
     {
       "presentations": 10048,
       "epoch": 1,
-      "rate_per_s": 43.94,
-      "eta_hours": 1.07,
-      "mean_spikes": 57.2,
+      "rate_per_s": 18.48,
+      "eta_hours": 0.75,
+      "mean_spikes": 23.9,
       "dead": 0
     },
     {
       "presentations": 10560,
       "epoch": 1,
-      "rate_per_s": 43.91,
-      "eta_hours": 1.07,
-      "mean_spikes": 56.4,
+      "rate_per_s": 18.21,
+      "eta_hours": 0.75,
+      "mean_spikes": 23.6,
       "dead": 0
     },
     {
       "presentations": 11008,
       "epoch": 1,
-      "rate_per_s": 43.94,
-      "eta_hours": 1.07,
-      "mean_spikes": 55.8,
+      "rate_per_s": 18.03,
+      "eta_hours": 0.75,
+      "mean_spikes": 23.4,
       "dead": 0
     },
     {
       "presentations": 11520,
       "epoch": 1,
-      "rate_per_s": 43.87,
-      "eta_hours": 1.07,
-      "mean_spikes": 55.1,
+      "rate_per_s": 17.73,
+      "eta_hours": 0.76,
+      "mean_spikes": 23.1,
       "dead": 0
     },
     {
       "presentations": 12032,
       "epoch": 1,
-      "rate_per_s": 43.74,
-      "eta_hours": 1.07,
-      "mean_spikes": 54.4,
+      "rate_per_s": 17.43,
+      "eta_hours": 0.76,
+      "mean_spikes": 22.8,
       "dead": 0
     },
     {
       "presentations": 12544,
       "epoch": 1,
-      "rate_per_s": 43.49,
-      "eta_hours": 1.07,
-      "mean_spikes": 53.8,
+      "rate_per_s": 17.11,
+      "eta_hours": 0.77,
+      "mean_spikes": 22.5,
       "dead": 0
     },
     {
       "presentations": 13056,
       "epoch": 1,
-      "rate_per_s": 43.24,
-      "eta_hours": 1.07,
-      "mean_spikes": 53.1,
+      "rate_per_s": 16.85,
+      "eta_hours": 0.77,
+      "mean_spikes": 22.2,
       "dead": 0
     },
     {
       "presentations": 13504,
       "epoch": 1,
-      "rate_per_s": 43.19,
-      "eta_hours": 1.07,
-      "mean_spikes": 52.6,
+      "rate_per_s": 16.72,
+      "eta_hours": 0.77,
+      "mean_spikes": 22.0,
       "dead": 0
     },
     {
       "presentations": 14016,
       "epoch": 1,
-      "rate_per_s": 43.09,
-      "eta_hours": 1.07,
-      "mean_spikes": 52.1,
+      "rate_per_s": 16.55,
+      "eta_hours": 0.77,
+      "mean_spikes": 21.8,
       "dead": 0
     },
     {
       "presentations": 14528,
       "epoch": 1,
-      "rate_per_s": 42.96,
-      "eta_hours": 1.07,
-      "mean_spikes": 51.6,
+      "rate_per_s": 16.33,
+      "eta_hours": 0.77,
+      "mean_spikes": 21.6,
       "dead": 0
     },
     {
       "presentations": 15040,
       "epoch": 1,
-      "rate_per_s": 42.95,
-      "eta_hours": 1.07,
-      "mean_spikes": 51.1,
+      "rate_per_s": 16.19,
+      "eta_hours": 0.77,
+      "mean_spikes": 21.4,
       "dead": 0
     },
     {
       "presentations": 15552,
       "epoch": 1,
-      "rate_per_s": 42.93,
-      "eta_hours": 1.06,
-      "mean_spikes": 50.6,
+      "rate_per_s": 16.07,
+      "eta_hours": 0.77,
+      "mean_spikes": 21.3,
       "dead": 0
     },
     {
       "presentations": 16000,
       "epoch": 1,
-      "rate_per_s": 42.79,
-      "eta_hours": 1.06,
-      "mean_spikes": 50.2,
+      "rate_per_s": 15.94,
+      "eta_hours": 0.77,
+      "mean_spikes": 21.1,
       "dead": 0
     },
     {
       "presentations": 16512,
       "epoch": 1,
-      "rate_per_s": 42.81,
-      "eta_hours": 1.06,
-      "mean_spikes": 49.8,
+      "rate_per_s": 15.82,
+      "eta_hours": 0.76,
+      "mean_spikes": 21.0,
       "dead": 0
     },
     {
       "presentations": 17024,
       "epoch": 1,
-      "rate_per_s": 42.7,
-      "eta_hours": 1.06,
-      "mean_spikes": 49.3,
+      "rate_per_s": 15.7,
+      "eta_hours": 0.76,
+      "mean_spikes": 20.8,
       "dead": 0
     },
     {
       "presentations": 17536,
       "epoch": 1,
-      "rate_per_s": 42.62,
-      "eta_hours": 1.06,
-      "mean_spikes": 48.9,
+      "rate_per_s": 15.57,
+      "eta_hours": 0.76,
+      "mean_spikes": 20.6,
       "dead": 0
     },
     {
       "presentations": 18048,
       "epoch": 1,
-      "rate_per_s": 42.53,
-      "eta_hours": 1.06,
-      "mean_spikes": 48.5,
+      "rate_per_s": 15.47,
+      "eta_hours": 0.75,
+      "mean_spikes": 20.5,
       "dead": 0
     },
     {
       "presentations": 18560,
       "epoch": 1,
-      "rate_per_s": 42.37,
-      "eta_hours": 1.06,
-      "mean_spikes": 48.1,
+      "rate_per_s": 15.36,
+      "eta_hours": 0.75,
+      "mean_spikes": 20.4,
       "dead": 0
     },
     {
       "presentations": 19008,
       "epoch": 1,
-      "rate_per_s": 42.26,
-      "eta_hours": 1.06,
-      "mean_spikes": 47.7,
+      "rate_per_s": 15.27,
+      "eta_hours": 0.75,
+      "mean_spikes": 20.2,
       "dead": 0
     },
     {
       "presentations": 19520,
       "epoch": 1,
-      "rate_per_s": 42.09,
-      "eta_hours": 1.06,
-      "mean_spikes": 47.4,
+      "rate_per_s": 15.15,
+      "eta_hours": 0.74,
+      "mean_spikes": 20.1,
       "dead": 0
     },
     {
       "presentations": 20032,
       "epoch": 1,
-      "rate_per_s": 41.98,
-      "eta_hours": 1.06,
-      "mean_spikes": 47.0,
+      "rate_per_s": 15.05,
+      "eta_hours": 0.74,
+      "mean_spikes": 20.0,
       "dead": 0
     },
     {
       "presentations": 20544,
       "epoch": 1,
-      "rate_per_s": 41.81,
-      "eta_hours": 1.06,
-      "mean_spikes": 46.7,
+      "rate_per_s": 14.91,
+      "eta_hours": 0.73,
+      "mean_spikes": 19.9,
       "dead": 0
     },
     {
       "presentations": 21056,
       "epoch": 1,
-      "rate_per_s": 41.68,
-      "eta_hours": 1.06,
-      "mean_spikes": 46.3,
+      "rate_per_s": 14.82,
+      "eta_hours": 0.73,
+      "mean_spikes": 19.8,
       "dead": 0
     },
     {
       "presentations": 21504,
       "epoch": 1,
-      "rate_per_s": 41.56,
-      "eta_hours": 1.06,
-      "mean_spikes": 46.0,
+      "rate_per_s": 14.75,
+      "eta_hours": 0.73,
+      "mean_spikes": 19.7,
       "dead": 0
     },
     {
       "presentations": 22016,
       "epoch": 1,
-      "rate_per_s": 41.45,
-      "eta_hours": 1.06,
-      "mean_spikes": 45.7,
+      "rate_per_s": 14.68,
+      "eta_hours": 0.72,
+      "mean_spikes": 19.6,
       "dead": 0
     },
     {
       "presentations": 22528,
       "epoch": 1,
-      "rate_per_s": 41.36,
-      "eta_hours": 1.06,
-      "mean_spikes": 45.4,
+      "rate_per_s": 14.6,
+      "eta_hours": 0.71,
+      "mean_spikes": 19.5,
       "dead": 0
     },
     {
       "presentations": 23040,
       "epoch": 1,
-      "rate_per_s": 41.29,
-      "eta_hours": 1.06,
-      "mean_spikes": 45.1,
+      "rate_per_s": 14.54,
+      "eta_hours": 0.71,
+      "mean_spikes": 19.4,
       "dead": 0
     },
     {
       "presentations": 23552,
       "epoch": 1,
-      "rate_per_s": 41.24,
-      "eta_hours": 1.05,
-      "mean_spikes": 44.8,
+      "rate_per_s": 14.47,
+      "eta_hours": 0.7,
+      "mean_spikes": 19.3,
       "dead": 0
     },
     {
       "presentations": 24000,
       "epoch": 1,
-      "rate_per_s": 41.22,
-      "eta_hours": 1.05,
-      "mean_spikes": 44.5,
+      "rate_per_s": 14.43,
+      "eta_hours": 0.69,
+      "mean_spikes": 19.2,
       "dead": 0
     },
     {
       "presentations": 24512,
       "epoch": 1,
-      "rate_per_s": 41.11,
-      "eta_hours": 1.05,
-      "mean_spikes": 44.2,
+      "rate_per_s": 14.35,
+      "eta_hours": 0.69,
+      "mean_spikes": 19.2,
       "dead": 0
     },
     {
       "presentations": 25024,
       "epoch": 1,
-      "rate_per_s": 41.04,
-      "eta_hours": 1.05,
-      "mean_spikes": 43.9,
+      "rate_per_s": 14.3,
+      "eta_hours": 0.68,
+      "mean_spikes": 19.1,
       "dead": 0
     },
     {
       "presentations": 25536,
       "epoch": 1,
-      "rate_per_s": 40.99,
-      "eta_hours": 1.05,
-      "mean_spikes": 43.6,
+      "rate_per_s": 14.26,
+      "eta_hours": 0.67,
+      "mean_spikes": 19.0,
       "dead": 0
     },
     {
       "presentations": 26048,
       "epoch": 1,
-      "rate_per_s": 40.88,
-      "eta_hours": 1.05,
-      "mean_spikes": 43.3,
+      "rate_per_s": 14.2,
+      "eta_hours": 0.66,
+      "mean_spikes": 18.9,
       "dead": 0
     },
     {
       "presentations": 26560,
       "epoch": 1,
-      "rate_per_s": 40.77,
-      "eta_hours": 1.05,
-      "mean_spikes": 43.1,
+      "rate_per_s": 14.13,
+      "eta_hours": 0.66,
+      "mean_spikes": 18.9,
       "dead": 0
     },
     {
       "presentations": 27008,
       "epoch": 1,
-      "rate_per_s": 40.65,
-      "eta_hours": 1.05,
-      "mean_spikes": 42.8,
+      "rate_per_s": 14.07,
+      "eta_hours": 0.65,
+      "mean_spikes": 18.8,
       "dead": 0
     },
     {
       "presentations": 27520,
       "epoch": 1,
-      "rate_per_s": 40.52,
-      "eta_hours": 1.05,
-      "mean_spikes": 42.6,
+      "rate_per_s": 14.0,
+      "eta_hours": 0.64,
+      "mean_spikes": 18.7,
       "dead": 0
     },
     {
       "presentations": 28032,
       "epoch": 1,
-      "rate_per_s": 40.36,
-      "eta_hours": 1.05,
-      "mean_spikes": 42.3,
+      "rate_per_s": 13.91,
+      "eta_hours": 0.64,
+      "mean_spikes": 18.6,
       "dead": 0
     },
     {
       "presentations": 28544,
       "epoch": 1,
-      "rate_per_s": 40.19,
-      "eta_hours": 1.05,
-      "mean_spikes": 42.0,
+      "rate_per_s": 13.83,
+      "eta_hours": 0.63,
+      "mean_spikes": 18.6,
       "dead": 0
     },
     {
       "presentations": 29056,
       "epoch": 1,
-      "rate_per_s": 40.0,
-      "eta_hours": 1.05,
-      "mean_spikes": 41.8,
+      "rate_per_s": 13.75,
+      "eta_hours": 0.63,
+      "mean_spikes": 18.5,
       "dead": 0
     },
     {
       "presentations": 29504,
       "epoch": 1,
-      "rate_per_s": 39.89,
-      "eta_hours": 1.05,
-      "mean_spikes": 41.6,
+      "rate_per_s": 13.7,
+      "eta_hours": 0.62,
+      "mean_spikes": 18.5,
       "dead": 0
     },
     {
       "presentations": 30016,
       "epoch": 1,
-      "rate_per_s": 39.76,
-      "eta_hours": 1.05,
-      "mean_spikes": 41.3,
+      "rate_per_s": 13.63,
+      "eta_hours": 0.61,
+      "mean_spikes": 18.4,
       "dead": 0
     },
     {
       "presentations": 30528,
       "epoch": 1,
-      "rate_per_s": 39.59,
-      "eta_hours": 1.05,
-      "mean_spikes": 41.1,
+      "rate_per_s": 13.57,
+      "eta_hours": 0.6,
+      "mean_spikes": 18.3,
       "dead": 0
     },
     {
       "presentations": 31040,
       "epoch": 1,
-      "rate_per_s": 39.5,
-      "eta_hours": 1.05,
-      "mean_spikes": 40.9,
+      "rate_per_s": 13.5,
+      "eta_hours": 0.6,
+      "mean_spikes": 18.3,
       "dead": 0
     },
     {
       "presentations": 31552,
       "epoch": 1,
-      "rate_per_s": 39.3,
-      "eta_hours": 1.05,
-      "mean_spikes": 40.6,
+      "rate_per_s": 13.43,
+      "eta_hours": 0.59,
+      "mean_spikes": 18.2,
       "dead": 0
     },
     {
       "presentations": 32000,
       "epoch": 1,
-      "rate_per_s": 39.2,
-      "eta_hours": 1.05,
-      "mean_spikes": 40.5,
+      "rate_per_s": 13.39,
+      "eta_hours": 0.58,
+      "mean_spikes": 18.2,
       "dead": 0
     },
     {
       "presentations": 32512,
       "epoch": 1,
-      "rate_per_s": 39.04,
-      "eta_hours": 1.05,
-      "mean_spikes": 40.2,
+      "rate_per_s": 13.32,
+      "eta_hours": 0.57,
+      "mean_spikes": 18.1,
       "dead": 0
     },
     {
       "presentations": 33024,
       "epoch": 1,
-      "rate_per_s": 38.94,
-      "eta_hours": 1.05,
-      "mean_spikes": 40.0,
+      "rate_per_s": 13.26,
+      "eta_hours": 0.57,
+      "mean_spikes": 18.1,
       "dead": 0
     },
     {
       "presentations": 33536,
       "epoch": 1,
-      "rate_per_s": 38.8,
-      "eta_hours": 1.05,
-      "mean_spikes": 39.8,
+      "rate_per_s": 13.19,
+      "eta_hours": 0.56,
+      "mean_spikes": 18.0,
       "dead": 0
     },
     {
       "presentations": 34048,
       "epoch": 1,
-      "rate_per_s": 38.68,
-      "eta_hours": 1.05,
-      "mean_spikes": 39.6,
+      "rate_per_s": 13.13,
+      "eta_hours": 0.55,
+      "mean_spikes": 17.9,
       "dead": 0
     },
     {
       "presentations": 34560,
       "epoch": 1,
-      "rate_per_s": 38.52,
-      "eta_hours": 1.05,
-      "mean_spikes": 39.4,
+      "rate_per_s": 13.06,
+      "eta_hours": 0.54,
+      "mean_spikes": 17.9,
       "dead": 0
     },
     {
       "presentations": 35008,
       "epoch": 1,
-      "rate_per_s": 38.46,
-      "eta_hours": 1.05,
-      "mean_spikes": 39.2,
+      "rate_per_s": 13.01,
+      "eta_hours": 0.53,
+      "mean_spikes": 17.8,
       "dead": 0
     },
     {
       "presentations": 35520,
       "epoch": 1,
-      "rate_per_s": 38.35,
-      "eta_hours": 1.05,
-      "mean_spikes": 39.0,
+      "rate_per_s": 12.94,
+      "eta_hours": 0.53,
+      "mean_spikes": 17.8,
       "dead": 0
     },
     {
       "presentations": 36032,
       "epoch": 1,
-      "rate_per_s": 38.24,
-      "eta_hours": 1.05,
-      "mean_spikes": 38.8,
+      "rate_per_s": 12.87,
+      "eta_hours": 0.52,
+      "mean_spikes": 17.7,
       "dead": 0
     },
     {
       "presentations": 36544,
       "epoch": 1,
-      "rate_per_s": 38.12,
-      "eta_hours": 1.05,
-      "mean_spikes": 38.6,
+      "rate_per_s": 12.81,
+      "eta_hours": 0.51,
+      "mean_spikes": 17.7,
       "dead": 0
     },
     {
       "presentations": 37056,
       "epoch": 1,
-      "rate_per_s": 38.03,
-      "eta_hours": 1.04,
-      "mean_spikes": 38.4,
+      "rate_per_s": 12.74,
+      "eta_hours": 0.5,
+      "mean_spikes": 17.6,
       "dead": 0
     },
     {
       "presentations": 37504,
       "epoch": 1,
-      "rate_per_s": 37.92,
-      "eta_hours": 1.04,
-      "mean_spikes": 38.2,
+      "rate_per_s": 12.68,
+      "eta_hours": 0.49,
+      "mean_spikes": 17.6,
       "dead": 0
     },
     {
       "presentations": 38016,
       "epoch": 1,
-      "rate_per_s": 37.83,
-      "eta_hours": 1.04,
-      "mean_spikes": 38.0,
+      "rate_per_s": 12.62,
+      "eta_hours": 0.48,
+      "mean_spikes": 17.5,
       "dead": 0
     },
     {
       "presentations": 38528,
       "epoch": 1,
-      "rate_per_s": 37.68,
-      "eta_hours": 1.04,
-      "mean_spikes": 37.8,
+      "rate_per_s": 12.55,
+      "eta_hours": 0.48,
+      "mean_spikes": 17.5,
       "dead": 0
     },
     {
       "presentations": 39040,
       "epoch": 1,
-      "rate_per_s": 37.56,
-      "eta_hours": 1.04,
-      "mean_spikes": 37.6,
+      "rate_per_s": 12.49,
+      "eta_hours": 0.47,
+      "mean_spikes": 17.4,
       "dead": 0
     },
     {
       "presentations": 39552,
       "epoch": 1,
-      "rate_per_s": 37.47,
-      "eta_hours": 1.04,
-      "mean_spikes": 37.4,
+      "rate_per_s": 12.44,
+      "eta_hours": 0.46,
+      "mean_spikes": 17.4,
       "dead": 0
     },
     {
       "presentations": 40000,
       "epoch": 1,
-      "rate_per_s": 37.31,
-      "eta_hours": 1.04,
-      "mean_spikes": 37.3,
+      "rate_per_s": 12.38,
+      "eta_hours": 0.45,
+      "mean_spikes": 17.4,
       "dead": 0
     },
     {
       "presentations": 40512,
       "epoch": 1,
-      "rate_per_s": 37.21,
-      "eta_hours": 1.04,
-      "mean_spikes": 37.1,
+      "rate_per_s": 12.33,
+      "eta_hours": 0.44,
+      "mean_spikes": 17.3,
       "dead": 0
     },
     {
       "presentations": 41024,
       "epoch": 1,
-      "rate_per_s": 37.09,
-      "eta_hours": 1.04,
-      "mean_spikes": 36.9,
+      "rate_per_s": 12.28,
+      "eta_hours": 0.43,
+      "mean_spikes": 17.3,
       "dead": 0
     },
     {
       "presentations": 41536,
       "epoch": 1,
-      "rate_per_s": 36.99,
-      "eta_hours": 1.04,
-      "mean_spikes": 36.8,
+      "rate_per_s": 12.22,
+      "eta_hours": 0.42,
+      "mean_spikes": 17.2,
       "dead": 0
     },
     {
       "presentations": 42048,
       "epoch": 1,
-      "rate_per_s": 36.94,
-      "eta_hours": 1.04,
-      "mean_spikes": 36.6,
+      "rate_per_s": 12.18,
+      "eta_hours": 0.41,
+      "mean_spikes": 17.2,
       "dead": 0
     },
     {
       "presentations": 42560,
       "epoch": 1,
-      "rate_per_s": 36.84,
-      "eta_hours": 1.04,
-      "mean_spikes": 36.4,
+      "rate_per_s": 12.13,
+      "eta_hours": 0.4,
+      "mean_spikes": 17.1,
       "dead": 0
     },
     {
       "presentations": 43008,
       "epoch": 1,
-      "rate_per_s": 36.74,
-      "eta_hours": 1.04,
-      "mean_spikes": 36.3,
+      "rate_per_s": 12.08,
+      "eta_hours": 0.39,
+      "mean_spikes": 17.1,
       "dead": 0
     },
     {
       "presentations": 43520,
       "epoch": 1,
-      "rate_per_s": 36.66,
-      "eta_hours": 1.03,
-      "mean_spikes": 36.1,
+      "rate_per_s": 12.03,
+      "eta_hours": 0.38,
+      "mean_spikes": 17.1,
       "dead": 0
     },
     {
       "presentations": 44032,
       "epoch": 1,
-      "rate_per_s": 36.57,
-      "eta_hours": 1.03,
-      "mean_spikes": 36.0,
+      "rate_per_s": 11.98,
+      "eta_hours": 0.37,
+      "mean_spikes": 17.0,
       "dead": 0
     },
     {
       "presentations": 44544,
       "epoch": 1,
-      "rate_per_s": 36.44,
-      "eta_hours": 1.03,
-      "mean_spikes": 35.8,
+      "rate_per_s": 11.93,
+      "eta_hours": 0.36,
+      "mean_spikes": 17.0,
       "dead": 0
     },
     {
       "presentations": 45056,
       "epoch": 1,
-      "rate_per_s": 36.32,
-      "eta_hours": 1.03,
-      "mean_spikes": 35.7,
+      "rate_per_s": 11.88,
+      "eta_hours": 0.35,
+      "mean_spikes": 16.9,
       "dead": 0
     },
     {
       "presentations": 45504,
       "epoch": 1,
-      "rate_per_s": 36.25,
-      "eta_hours": 1.03,
-      "mean_spikes": 35.5,
+      "rate_per_s": 11.84,
+      "eta_hours": 0.34,
+      "mean_spikes": 16.9,
       "dead": 0
     },
     {
       "presentations": 46016,
       "epoch": 1,
-      "rate_per_s": 36.16,
-      "eta_hours": 1.03,
-      "mean_spikes": 35.4,
+      "rate_per_s": 11.8,
+      "eta_hours": 0.33,
+      "mean_spikes": 16.9,
       "dead": 0
     },
     {
       "presentations": 46528,
       "epoch": 1,
-      "rate_per_s": 36.06,
-      "eta_hours": 1.03,
-      "mean_spikes": 35.3,
+      "rate_per_s": 11.75,
+      "eta_hours": 0.32,
+      "mean_spikes": 16.8,
       "dead": 0
     },
     {
       "presentations": 47040,
       "epoch": 1,
-      "rate_per_s": 35.95,
-      "eta_hours": 1.03,
-      "mean_spikes": 35.1,
+      "rate_per_s": 11.7,
+      "eta_hours": 0.31,
+      "mean_spikes": 16.8,
       "dead": 0
     },
     {
       "presentations": 47552,
       "epoch": 1,
-      "rate_per_s": 35.87,
-      "eta_hours": 1.03,
-      "mean_spikes": 35.0,
+      "rate_per_s": 11.65,
+      "eta_hours": 0.3,
+      "mean_spikes": 16.7,
       "dead": 0
     },
     {
       "presentations": 48000,
       "epoch": 1,
-      "rate_per_s": 35.81,
-      "eta_hours": 1.02,
-      "mean_spikes": 34.9,
+      "rate_per_s": 11.61,
+      "eta_hours": 0.29,
+      "mean_spikes": 16.7,
       "dead": 0
     },
     {
       "presentations": 48512,
       "epoch": 1,
-      "rate_per_s": 35.7,
-      "eta_hours": 1.02,
-      "mean_spikes": 34.7,
+      "rate_per_s": 11.56,
+      "eta_hours": 0.28,
+      "mean_spikes": 16.7,
       "dead": 0
     },
     {
       "presentations": 49024,
       "epoch": 1,
-      "rate_per_s": 35.63,
-      "eta_hours": 1.02,
-      "mean_spikes": 34.6,
+      "rate_per_s": 11.51,
+      "eta_hours": 0.26,
+      "mean_spikes": 16.6,
       "dead": 0
     },
     {
       "presentations": 49536,
       "epoch": 1,
-      "rate_per_s": 35.53,
-      "eta_hours": 1.02,
-      "mean_spikes": 34.5,
+      "rate_per_s": 11.47,
+      "eta_hours": 0.25,
+      "mean_spikes": 16.6,
       "dead": 0
     },
     {
       "presentations": 50048,
       "epoch": 1,
-      "rate_per_s": 35.46,
-      "eta_hours": 1.02,
-      "mean_spikes": 34.3,
+      "rate_per_s": 11.42,
+      "eta_hours": 0.24,
+      "mean_spikes": 16.6,
       "dead": 0
     },
     {
       "presentations": 50560,
       "epoch": 1,
-      "rate_per_s": 35.39,
-      "eta_hours": 1.02,
-      "mean_spikes": 34.2,
+      "rate_per_s": 11.38,
+      "eta_hours": 0.23,
+      "mean_spikes": 16.5,
       "dead": 0
     },
     {
       "presentations": 51008,
       "epoch": 1,
-      "rate_per_s": 35.27,
-      "eta_hours": 1.02,
-      "mean_spikes": 34.1,
+      "rate_per_s": 11.34,
+      "eta_hours": 0.22,
+      "mean_spikes": 16.5,
       "dead": 0
     },
     {
       "presentations": 51520,
       "epoch": 1,
-      "rate_per_s": 35.19,
-      "eta_hours": 1.01,
-      "mean_spikes": 34.0,
+      "rate_per_s": 11.29,
+      "eta_hours": 0.21,
+      "mean_spikes": 16.4,
       "dead": 0
     },
     {
       "presentations": 52032,
       "epoch": 1,
-      "rate_per_s": 35.1,
-      "eta_hours": 1.01,
-      "mean_spikes": 33.9,
+      "rate_per_s": 11.24,
+      "eta_hours": 0.2,
+      "mean_spikes": 16.4,
       "dead": 0
     },
     {
       "presentations": 52544,
       "epoch": 1,
-      "rate_per_s": 35.03,
-      "eta_hours": 1.01,
-      "mean_spikes": 33.7,
+      "rate_per_s": 11.2,
+      "eta_hours": 0.18,
+      "mean_spikes": 16.4,
       "dead": 0
     },
     {
       "presentations": 53056,
       "epoch": 1,
-      "rate_per_s": 34.94,
-      "eta_hours": 1.01,
-      "mean_spikes": 33.6,
+      "rate_per_s": 11.16,
+      "eta_hours": 0.17,
+      "mean_spikes": 16.3,
       "dead": 0
     },
     {
       "presentations": 53504,
       "epoch": 1,
-      "rate_per_s": 34.86,
-      "eta_hours": 1.01,
-      "mean_spikes": 33.5,
+      "rate_per_s": 11.13,
+      "eta_hours": 0.16,
+      "mean_spikes": 16.3,
       "dead": 0
     },
     {
       "presentations": 54016,
       "epoch": 1,
-      "rate_per_s": 34.79,
-      "eta_hours": 1.01,
-      "mean_spikes": 33.4,
+      "rate_per_s": 11.09,
+      "eta_hours": 0.15,
+      "mean_spikes": 16.3,
       "dead": 0
     },
     {
       "presentations": 54528,
       "epoch": 1,
-      "rate_per_s": 34.71,
-      "eta_hours": 1.0,
-      "mean_spikes": 33.3,
+      "rate_per_s": 11.05,
+      "eta_hours": 0.14,
+      "mean_spikes": 16.2,
       "dead": 0
     },
     {
       "presentations": 55040,
       "epoch": 1,
-      "rate_per_s": 34.63,
-      "eta_hours": 1.0,
-      "mean_spikes": 33.2,
+      "rate_per_s": 11.01,
+      "eta_hours": 0.13,
+      "mean_spikes": 16.2,
       "dead": 0
     },
     {
       "presentations": 55552,
       "epoch": 1,
-      "rate_per_s": 34.56,
-      "eta_hours": 1.0,
-      "mean_spikes": 33.1,
+      "rate_per_s": 10.97,
+      "eta_hours": 0.11,
+      "mean_spikes": 16.2,
       "dead": 0
     },
     {
       "presentations": 56000,
       "epoch": 1,
-      "rate_per_s": 34.51,
-      "eta_hours": 1.0,
-      "mean_spikes": 33.0,
+      "rate_per_s": 10.94,
+      "eta_hours": 0.1,
+      "mean_spikes": 16.1,
       "dead": 0
     },
     {
       "presentations": 56512,
       "epoch": 1,
-      "rate_per_s": 34.41,
-      "eta_hours": 1.0,
-      "mean_spikes": 32.8,
+      "rate_per_s": 10.9,
+      "eta_hours": 0.09,
+      "mean_spikes": 16.1,
       "dead": 0
     },
     {
       "presentations": 57024,
       "epoch": 1,
-      "rate_per_s": 34.34,
-      "eta_hours": 0.99,
-      "mean_spikes": 32.7,
+      "rate_per_s": 10.87,
+      "eta_hours": 0.08,
+      "mean_spikes": 16.1,
       "dead": 0
     },
     {
       "presentations": 57536,
       "epoch": 1,
-      "rate_per_s": 34.25,
-      "eta_hours": 0.99,
-      "mean_spikes": 32.6,
+      "rate_per_s": 10.83,
+      "eta_hours": 0.06,
+      "mean_spikes": 16.0,
       "dead": 0
     },
     {
       "presentations": 58048,
       "epoch": 1,
-      "rate_per_s": 34.18,
-      "eta_hours": 0.99,
-      "mean_spikes": 32.5,
+      "rate_per_s": 10.8,
+      "eta_hours": 0.05,
+      "mean_spikes": 16.0,
       "dead": 0
     },
     {
       "presentations": 58560,
       "epoch": 1,
-      "rate_per_s": 34.09,
-      "eta_hours": 0.99,
-      "mean_spikes": 32.4,
+      "rate_per_s": 10.77,
+      "eta_hours": 0.04,
+      "mean_spikes": 16.0,
       "dead": 0
     },
     {
       "presentations": 59008,
       "epoch": 1,
-      "rate_per_s": 34.04,
-      "eta_hours": 0.99,
-      "mean_spikes": 32.3,
+      "rate_per_s": 10.74,
+      "eta_hours": 0.03,
+      "mean_spikes": 15.9,
       "dead": 0
     },
     {
       "presentations": 59520,
       "epoch": 1,
-      "rate_per_s": 33.97,
-      "eta_hours": 0.99,
-      "mean_spikes": 32.2,
-      "dead": 0
-    },
-    {
-      "presentations": 60032,
-      "epoch": 2,
-      "rate_per_s": 33.9,
-      "eta_hours": 0.98,
-      "mean_spikes": 32.1,
-      "dead": 0
-    },
-    {
-      "presentations": 60544,
-      "epoch": 2,
-      "rate_per_s": 33.82,
-      "eta_hours": 0.98,
-      "mean_spikes": 32.0,
-      "dead": 0
-    },
-    {
-      "presentations": 61056,
-      "epoch": 2,
-      "rate_per_s": 33.77,
-      "eta_hours": 0.98,
-      "mean_spikes": 31.9,
-      "dead": 0
-    },
-    {
-      "presentations": 61504,
-      "epoch": 2,
-      "rate_per_s": 33.71,
-      "eta_hours": 0.98,
-      "mean_spikes": 31.9,
-      "dead": 0
-    },
-    {
-      "presentations": 62016,
-      "epoch": 2,
-      "rate_per_s": 33.62,
-      "eta_hours": 0.97,
-      "mean_spikes": 31.8,
-      "dead": 0
-    },
-    {
-      "presentations": 62528,
-      "epoch": 2,
-      "rate_per_s": 33.55,
-      "eta_hours": 0.97,
-      "mean_spikes": 31.7,
-      "dead": 0
-    },
-    {
-      "presentations": 63040,
-      "epoch": 2,
-      "rate_per_s": 33.48,
-      "eta_hours": 0.97,
-      "mean_spikes": 31.6,
-      "dead": 0
-    },
-    {
-      "presentations": 63552,
-      "epoch": 2,
-      "rate_per_s": 33.43,
-      "eta_hours": 0.97,
-      "mean_spikes": 31.5,
-      "dead": 0
-    },
-    {
-      "presentations": 64000,
-      "epoch": 2,
-      "rate_per_s": 33.39,
-      "eta_hours": 0.96,
-      "mean_spikes": 31.4,
-      "dead": 0
-    },
-    {
-      "presentations": 64512,
-      "epoch": 2,
-      "rate_per_s": 33.34,
-      "eta_hours": 0.96,
-      "mean_spikes": 31.3,
-      "dead": 0
-    },
-    {
-      "presentations": 65024,
-      "epoch": 2,
-      "rate_per_s": 33.29,
-      "eta_hours": 0.96,
-      "mean_spikes": 31.2,
-      "dead": 0
-    },
-    {
-      "presentations": 65536,
-      "epoch": 2,
-      "rate_per_s": 33.22,
-      "eta_hours": 0.96,
-      "mean_spikes": 31.2,
-      "dead": 0
-    },
-    {
-      "presentations": 66048,
-      "epoch": 2,
-      "rate_per_s": 33.16,
-      "eta_hours": 0.95,
-      "mean_spikes": 31.1,
-      "dead": 0
-    },
-    {
-      "presentations": 66560,
-      "epoch": 2,
-      "rate_per_s": 33.11,
-      "eta_hours": 0.95,
-      "mean_spikes": 31.0,
-      "dead": 0
-    },
-    {
-      "presentations": 67008,
-      "epoch": 2,
-      "rate_per_s": 33.04,
-      "eta_hours": 0.95,
-      "mean_spikes": 30.9,
-      "dead": 0
-    },
-    {
-      "presentations": 67520,
-      "epoch": 2,
-      "rate_per_s": 32.98,
-      "eta_hours": 0.95,
-      "mean_spikes": 30.8,
-      "dead": 0
-    },
-    {
-      "presentations": 68032,
-      "epoch": 2,
-      "rate_per_s": 32.94,
-      "eta_hours": 0.94,
-      "mean_spikes": 30.8,
-      "dead": 0
-    },
-    {
-      "presentations": 68544,
-      "epoch": 2,
-      "rate_per_s": 32.87,
-      "eta_hours": 0.94,
-      "mean_spikes": 30.7,
-      "dead": 0
-    },
-    {
-      "presentations": 69056,
-      "epoch": 2,
-      "rate_per_s": 32.79,
-      "eta_hours": 0.94,
-      "mean_spikes": 30.6,
-      "dead": 0
-    },
-    {
-      "presentations": 69504,
-      "epoch": 2,
-      "rate_per_s": 32.75,
-      "eta_hours": 0.94,
-      "mean_spikes": 30.5,
-      "dead": 0
-    },
-    {
-      "presentations": 70016,
-      "epoch": 2,
-      "rate_per_s": 32.66,
-      "eta_hours": 0.94,
-      "mean_spikes": 30.5,
-      "dead": 0
-    },
-    {
-      "presentations": 70528,
-      "epoch": 2,
-      "rate_per_s": 32.61,
-      "eta_hours": 0.93,
-      "mean_spikes": 30.4,
-      "dead": 0
-    },
-    {
-      "presentations": 71040,
-      "epoch": 2,
-      "rate_per_s": 32.56,
-      "eta_hours": 0.93,
-      "mean_spikes": 30.3,
-      "dead": 0
-    },
-    {
-      "presentations": 71552,
-      "epoch": 2,
-      "rate_per_s": 32.52,
-      "eta_hours": 0.93,
-      "mean_spikes": 30.3,
-      "dead": 0
-    },
-    {
-      "presentations": 72000,
-      "epoch": 2,
-      "rate_per_s": 32.49,
-      "eta_hours": 0.92,
-      "mean_spikes": 30.2,
-      "dead": 0
-    },
-    {
-      "presentations": 72512,
-      "epoch": 2,
-      "rate_per_s": 32.45,
-      "eta_hours": 0.92,
-      "mean_spikes": 30.1,
-      "dead": 0
-    },
-    {
-      "presentations": 73024,
-      "epoch": 2,
-      "rate_per_s": 32.4,
-      "eta_hours": 0.92,
-      "mean_spikes": 30.1,
-      "dead": 0
-    },
-    {
-      "presentations": 73536,
-      "epoch": 2,
-      "rate_per_s": 32.34,
-      "eta_hours": 0.91,
-      "mean_spikes": 30.0,
-      "dead": 0
-    },
-    {
-      "presentations": 74048,
-      "epoch": 2,
-      "rate_per_s": 32.3,
-      "eta_hours": 0.91,
-      "mean_spikes": 29.9,
-      "dead": 0
-    },
-    {
-      "presentations": 74560,
-      "epoch": 2,
-      "rate_per_s": 32.25,
-      "eta_hours": 0.91,
-      "mean_spikes": 29.8,
-      "dead": 0
-    },
-    {
-      "presentations": 75008,
-      "epoch": 2,
-      "rate_per_s": 32.22,
-      "eta_hours": 0.91,
-      "mean_spikes": 29.8,
-      "dead": 0
-    },
-    {
-      "presentations": 75520,
-      "epoch": 2,
-      "rate_per_s": 32.17,
-      "eta_hours": 0.9,
-      "mean_spikes": 29.7,
-      "dead": 0
-    },
-    {
-      "presentations": 76032,
-      "epoch": 2,
-      "rate_per_s": 32.11,
-      "eta_hours": 0.9,
-      "mean_spikes": 29.6,
-      "dead": 0
-    },
-    {
-      "presentations": 76544,
-      "epoch": 2,
-      "rate_per_s": 32.06,
-      "eta_hours": 0.9,
-      "mean_spikes": 29.6,
-      "dead": 0
-    },
-    {
-      "presentations": 77056,
-      "epoch": 2,
-      "rate_per_s": 32.01,
-      "eta_hours": 0.89,
-      "mean_spikes": 29.5,
-      "dead": 0
-    },
-    {
-      "presentations": 77504,
-      "epoch": 2,
-      "rate_per_s": 31.97,
-      "eta_hours": 0.89,
-      "mean_spikes": 29.5,
-      "dead": 0
-    },
-    {
-      "presentations": 78016,
-      "epoch": 2,
-      "rate_per_s": 31.93,
-      "eta_hours": 0.89,
-      "mean_spikes": 29.4,
-      "dead": 0
-    },
-    {
-      "presentations": 78528,
-      "epoch": 2,
-      "rate_per_s": 31.9,
-      "eta_hours": 0.88,
-      "mean_spikes": 29.3,
-      "dead": 0
-    },
-    {
-      "presentations": 79040,
-      "epoch": 2,
-      "rate_per_s": 31.84,
-      "eta_hours": 0.88,
-      "mean_spikes": 29.3,
-      "dead": 0
-    },
-    {
-      "presentations": 79552,
-      "epoch": 2,
-      "rate_per_s": 31.79,
-      "eta_hours": 0.88,
-      "mean_spikes": 29.2,
-      "dead": 0
-    },
-    {
-      "presentations": 80000,
-      "epoch": 2,
-      "rate_per_s": 31.77,
-      "eta_hours": 0.87,
-      "mean_spikes": 29.2,
-      "dead": 0
-    },
-    {
-      "presentations": 80512,
-      "epoch": 2,
-      "rate_per_s": 31.74,
-      "eta_hours": 0.87,
-      "mean_spikes": 29.1,
-      "dead": 0
-    },
-    {
-      "presentations": 81024,
-      "epoch": 2,
-      "rate_per_s": 31.71,
-      "eta_hours": 0.87,
-      "mean_spikes": 29.1,
-      "dead": 0
-    },
-    {
-      "presentations": 81536,
-      "epoch": 2,
-      "rate_per_s": 31.67,
-      "eta_hours": 0.86,
-      "mean_spikes": 29.0,
-      "dead": 0
-    },
-    {
-      "presentations": 82048,
-      "epoch": 2,
-      "rate_per_s": 31.62,
-      "eta_hours": 0.86,
-      "mean_spikes": 28.9,
-      "dead": 0
-    },
-    {
-      "presentations": 82560,
-      "epoch": 2,
-      "rate_per_s": 31.57,
-      "eta_hours": 0.86,
-      "mean_spikes": 28.9,
-      "dead": 0
-    },
-    {
-      "presentations": 83008,
-      "epoch": 2,
-      "rate_per_s": 31.55,
-      "eta_hours": 0.85,
-      "mean_spikes": 28.8,
-      "dead": 0
-    },
-    {
-      "presentations": 83520,
-      "epoch": 2,
-      "rate_per_s": 31.51,
-      "eta_hours": 0.85,
-      "mean_spikes": 28.8,
-      "dead": 0
-    },
-    {
-      "presentations": 84032,
-      "epoch": 2,
-      "rate_per_s": 31.47,
-      "eta_hours": 0.85,
-      "mean_spikes": 28.7,
-      "dead": 0
-    },
-    {
-      "presentations": 84544,
-      "epoch": 2,
-      "rate_per_s": 31.43,
-      "eta_hours": 0.84,
-      "mean_spikes": 28.7,
-      "dead": 0
-    },
-    {
-      "presentations": 85056,
-      "epoch": 2,
-      "rate_per_s": 31.4,
-      "eta_hours": 0.84,
-      "mean_spikes": 28.6,
-      "dead": 0
-    },
-    {
-      "presentations": 85504,
-      "epoch": 2,
-      "rate_per_s": 31.37,
-      "eta_hours": 0.84,
-      "mean_spikes": 28.6,
-      "dead": 0
-    },
-    {
-      "presentations": 86016,
-      "epoch": 2,
-      "rate_per_s": 31.32,
-      "eta_hours": 0.83,
-      "mean_spikes": 28.5,
-      "dead": 0
-    },
-    {
-      "presentations": 86528,
-      "epoch": 2,
-      "rate_per_s": 31.27,
-      "eta_hours": 0.83,
-      "mean_spikes": 28.5,
-      "dead": 0
-    },
-    {
-      "presentations": 87040,
-      "epoch": 2,
-      "rate_per_s": 31.22,
-      "eta_hours": 0.83,
-      "mean_spikes": 28.4,
-      "dead": 0
-    },
-    {
-      "presentations": 87552,
-      "epoch": 2,
-      "rate_per_s": 31.18,
-      "eta_hours": 0.82,
-      "mean_spikes": 28.4,
-      "dead": 0
-    },
-    {
-      "presentations": 88000,
-      "epoch": 2,
-      "rate_per_s": 31.13,
-      "eta_hours": 0.82,
-      "mean_spikes": 28.3,
-      "dead": 0
-    },
-    {
-      "presentations": 88512,
-      "epoch": 2,
-      "rate_per_s": 31.08,
-      "eta_hours": 0.82,
-      "mean_spikes": 28.3,
-      "dead": 0
-    },
-    {
-      "presentations": 89024,
-      "epoch": 2,
-      "rate_per_s": 31.05,
-      "eta_hours": 0.81,
-      "mean_spikes": 28.2,
-      "dead": 0
-    },
-    {
-      "presentations": 89536,
-      "epoch": 2,
-      "rate_per_s": 31.01,
-      "eta_hours": 0.81,
-      "mean_spikes": 28.2,
-      "dead": 0
-    },
-    {
-      "presentations": 90048,
-      "epoch": 2,
-      "rate_per_s": 30.97,
-      "eta_hours": 0.81,
-      "mean_spikes": 28.1,
-      "dead": 0
-    },
-    {
-      "presentations": 90560,
-      "epoch": 2,
-      "rate_per_s": 30.93,
-      "eta_hours": 0.8,
-      "mean_spikes": 28.1,
-      "dead": 0
-    },
-    {
-      "presentations": 91008,
-      "epoch": 2,
-      "rate_per_s": 30.91,
-      "eta_hours": 0.8,
-      "mean_spikes": 28.0,
-      "dead": 0
-    },
-    {
-      "presentations": 91520,
-      "epoch": 2,
-      "rate_per_s": 30.87,
-      "eta_hours": 0.8,
-      "mean_spikes": 28.0,
-      "dead": 0
-    },
-    {
-      "presentations": 92032,
-      "epoch": 2,
-      "rate_per_s": 30.83,
-      "eta_hours": 0.79,
-      "mean_spikes": 27.9,
-      "dead": 0
-    },
-    {
-      "presentations": 92544,
-      "epoch": 2,
-      "rate_per_s": 30.78,
-      "eta_hours": 0.79,
-      "mean_spikes": 27.9,
-      "dead": 0
-    },
-    {
-      "presentations": 93056,
-      "epoch": 2,
-      "rate_per_s": 30.73,
-      "eta_hours": 0.79,
-      "mean_spikes": 27.9,
-      "dead": 0
-    },
-    {
-      "presentations": 93504,
-      "epoch": 2,
-      "rate_per_s": 30.71,
-      "eta_hours": 0.78,
-      "mean_spikes": 27.8,
-      "dead": 0
-    },
-    {
-      "presentations": 94016,
-      "epoch": 2,
-      "rate_per_s": 30.66,
-      "eta_hours": 0.78,
-      "mean_spikes": 27.8,
-      "dead": 0
-    },
-    {
-      "presentations": 94528,
-      "epoch": 2,
-      "rate_per_s": 30.64,
-      "eta_hours": 0.77,
-      "mean_spikes": 27.7,
-      "dead": 0
-    },
-    {
-      "presentations": 95040,
-      "epoch": 2,
-      "rate_per_s": 30.59,
-      "eta_hours": 0.77,
-      "mean_spikes": 27.7,
-      "dead": 0
-    },
-    {
-      "presentations": 95552,
-      "epoch": 2,
-      "rate_per_s": 30.55,
-      "eta_hours": 0.77,
-      "mean_spikes": 27.6,
-      "dead": 0
-    },
-    {
-      "presentations": 96000,
-      "epoch": 2,
-      "rate_per_s": 30.51,
-      "eta_hours": 0.76,
-      "mean_spikes": 27.6,
-      "dead": 0
-    },
-    {
-      "presentations": 96512,
-      "epoch": 2,
-      "rate_per_s": 30.48,
-      "eta_hours": 0.76,
-      "mean_spikes": 27.5,
-      "dead": 0
-    },
-    {
-      "presentations": 97024,
-      "epoch": 2,
-      "rate_per_s": 30.44,
-      "eta_hours": 0.76,
-      "mean_spikes": 27.5,
-      "dead": 0
-    },
-    {
-      "presentations": 97536,
-      "epoch": 2,
-      "rate_per_s": 30.4,
-      "eta_hours": 0.75,
-      "mean_spikes": 27.4,
-      "dead": 0
-    },
-    {
-      "presentations": 98048,
-      "epoch": 2,
-      "rate_per_s": 30.37,
-      "eta_hours": 0.75,
-      "mean_spikes": 27.4,
-      "dead": 0
-    },
-    {
-      "presentations": 98560,
-      "epoch": 2,
-      "rate_per_s": 30.33,
-      "eta_hours": 0.75,
-      "mean_spikes": 27.4,
-      "dead": 0
-    },
-    {
-      "presentations": 99008,
-      "epoch": 2,
-      "rate_per_s": 30.3,
-      "eta_hours": 0.74,
-      "mean_spikes": 27.3,
-      "dead": 0
-    },
-    {
-      "presentations": 99520,
-      "epoch": 2,
-      "rate_per_s": 30.28,
-      "eta_hours": 0.74,
-      "mean_spikes": 27.3,
-      "dead": 0
-    },
-    {
-      "presentations": 100032,
-      "epoch": 2,
-      "rate_per_s": 30.24,
-      "eta_hours": 0.73,
-      "mean_spikes": 27.2,
-      "dead": 0
-    },
-    {
-      "presentations": 100544,
-      "epoch": 2,
-      "rate_per_s": 30.21,
-      "eta_hours": 0.73,
-      "mean_spikes": 27.2,
-      "dead": 0
-    },
-    {
-      "presentations": 101056,
-      "epoch": 2,
-      "rate_per_s": 30.19,
-      "eta_hours": 0.73,
-      "mean_spikes": 27.1,
-      "dead": 0
-    },
-    {
-      "presentations": 101504,
-      "epoch": 2,
-      "rate_per_s": 30.16,
-      "eta_hours": 0.72,
-      "mean_spikes": 27.1,
-      "dead": 0
-    },
-    {
-      "presentations": 102016,
-      "epoch": 2,
-      "rate_per_s": 30.11,
-      "eta_hours": 0.72,
-      "mean_spikes": 27.1,
-      "dead": 0
-    },
-    {
-      "presentations": 102528,
-      "epoch": 2,
-      "rate_per_s": 30.07,
-      "eta_hours": 0.72,
-      "mean_spikes": 27.0,
-      "dead": 0
-    },
-    {
-      "presentations": 103040,
-      "epoch": 2,
-      "rate_per_s": 30.04,
-      "eta_hours": 0.71,
-      "mean_spikes": 27.0,
-      "dead": 0
-    },
-    {
-      "presentations": 103552,
-      "epoch": 2,
-      "rate_per_s": 30.0,
-      "eta_hours": 0.71,
-      "mean_spikes": 26.9,
-      "dead": 0
-    },
-    {
-      "presentations": 104000,
-      "epoch": 2,
-      "rate_per_s": 29.97,
-      "eta_hours": 0.7,
-      "mean_spikes": 26.9,
-      "dead": 0
-    },
-    {
-      "presentations": 104512,
-      "epoch": 2,
-      "rate_per_s": 29.95,
-      "eta_hours": 0.7,
-      "mean_spikes": 26.9,
-      "dead": 0
-    },
-    {
-      "presentations": 105024,
-      "epoch": 2,
-      "rate_per_s": 29.91,
-      "eta_hours": 0.7,
-      "mean_spikes": 26.8,
-      "dead": 0
-    },
-    {
-      "presentations": 105536,
-      "epoch": 2,
-      "rate_per_s": 29.87,
-      "eta_hours": 0.69,
-      "mean_spikes": 26.8,
-      "dead": 0
-    },
-    {
-      "presentations": 106048,
-      "epoch": 2,
-      "rate_per_s": 29.84,
-      "eta_hours": 0.69,
-      "mean_spikes": 26.8,
-      "dead": 0
-    },
-    {
-      "presentations": 106560,
-      "epoch": 2,
-      "rate_per_s": 29.79,
-      "eta_hours": 0.68,
-      "mean_spikes": 26.7,
-      "dead": 0
-    },
-    {
-      "presentations": 107008,
-      "epoch": 2,
-      "rate_per_s": 29.76,
-      "eta_hours": 0.68,
-      "mean_spikes": 26.7,
-      "dead": 0
-    },
-    {
-      "presentations": 107520,
-      "epoch": 2,
-      "rate_per_s": 29.73,
-      "eta_hours": 0.68,
-      "mean_spikes": 26.6,
-      "dead": 0
-    },
-    {
-      "presentations": 108032,
-      "epoch": 2,
-      "rate_per_s": 29.7,
-      "eta_hours": 0.67,
-      "mean_spikes": 26.6,
-      "dead": 0
-    },
-    {
-      "presentations": 108544,
-      "epoch": 2,
-      "rate_per_s": 29.67,
-      "eta_hours": 0.67,
-      "mean_spikes": 26.6,
-      "dead": 0
-    },
-    {
-      "presentations": 109056,
-      "epoch": 2,
-      "rate_per_s": 29.62,
-      "eta_hours": 0.67,
-      "mean_spikes": 26.5,
-      "dead": 0
-    },
-    {
-      "presentations": 109504,
-      "epoch": 2,
-      "rate_per_s": 29.6,
-      "eta_hours": 0.66,
-      "mean_spikes": 26.5,
-      "dead": 0
-    },
-    {
-      "presentations": 110016,
-      "epoch": 2,
-      "rate_per_s": 29.57,
-      "eta_hours": 0.66,
-      "mean_spikes": 26.5,
-      "dead": 0
-    },
-    {
-      "presentations": 110528,
-      "epoch": 2,
-      "rate_per_s": 29.54,
-      "eta_hours": 0.65,
-      "mean_spikes": 26.4,
-      "dead": 0
-    },
-    {
-      "presentations": 111040,
-      "epoch": 2,
-      "rate_per_s": 29.5,
-      "eta_hours": 0.65,
-      "mean_spikes": 26.4,
-      "dead": 0
-    },
-    {
-      "presentations": 111552,
-      "epoch": 2,
-      "rate_per_s": 29.45,
-      "eta_hours": 0.65,
-      "mean_spikes": 26.3,
-      "dead": 0
-    },
-    {
-      "presentations": 112000,
-      "epoch": 2,
-      "rate_per_s": 29.42,
-      "eta_hours": 0.64,
-      "mean_spikes": 26.3,
-      "dead": 0
-    },
-    {
-      "presentations": 112512,
-      "epoch": 2,
-      "rate_per_s": 29.39,
-      "eta_hours": 0.64,
-      "mean_spikes": 26.3,
-      "dead": 0
-    },
-    {
-      "presentations": 113024,
-      "epoch": 2,
-      "rate_per_s": 29.37,
-      "eta_hours": 0.63,
-      "mean_spikes": 26.2,
-      "dead": 0
-    },
-    {
-      "presentations": 113536,
-      "epoch": 2,
-      "rate_per_s": 29.34,
-      "eta_hours": 0.63,
-      "mean_spikes": 26.2,
-      "dead": 0
-    },
-    {
-      "presentations": 114048,
-      "epoch": 2,
-      "rate_per_s": 29.31,
-      "eta_hours": 0.63,
-      "mean_spikes": 26.1,
-      "dead": 0
-    },
-    {
-      "presentations": 114560,
-      "epoch": 2,
-      "rate_per_s": 29.26,
-      "eta_hours": 0.62,
-      "mean_spikes": 26.1,
-      "dead": 0
-    },
-    {
-      "presentations": 115008,
-      "epoch": 2,
-      "rate_per_s": 29.24,
-      "eta_hours": 0.62,
-      "mean_spikes": 26.1,
-      "dead": 0
-    },
-    {
-      "presentations": 115520,
-      "epoch": 2,
-      "rate_per_s": 29.2,
-      "eta_hours": 0.61,
-      "mean_spikes": 26.0,
-      "dead": 0
-    },
-    {
-      "presentations": 116032,
-      "epoch": 2,
-      "rate_per_s": 29.17,
-      "eta_hours": 0.61,
-      "mean_spikes": 26.0,
-      "dead": 0
-    },
-    {
-      "presentations": 116544,
-      "epoch": 2,
-      "rate_per_s": 29.13,
-      "eta_hours": 0.61,
-      "mean_spikes": 26.0,
-      "dead": 0
-    },
-    {
-      "presentations": 117056,
-      "epoch": 2,
-      "rate_per_s": 29.08,
-      "eta_hours": 0.6,
-      "mean_spikes": 25.9,
-      "dead": 0
-    },
-    {
-      "presentations": 117504,
-      "epoch": 2,
-      "rate_per_s": 29.04,
-      "eta_hours": 0.6,
-      "mean_spikes": 25.9,
-      "dead": 0
-    },
-    {
-      "presentations": 118016,
-      "epoch": 2,
-      "rate_per_s": 29.0,
-      "eta_hours": 0.59,
-      "mean_spikes": 25.9,
-      "dead": 0
-    },
-    {
-      "presentations": 118528,
-      "epoch": 2,
-      "rate_per_s": 28.96,
-      "eta_hours": 0.59,
-      "mean_spikes": 25.8,
-      "dead": 0
-    },
-    {
-      "presentations": 119040,
-      "epoch": 2,
-      "rate_per_s": 28.92,
-      "eta_hours": 0.59,
-      "mean_spikes": 25.8,
-      "dead": 0
-    },
-    {
-      "presentations": 119552,
-      "epoch": 2,
-      "rate_per_s": 28.87,
-      "eta_hours": 0.58,
-      "mean_spikes": 25.8,
-      "dead": 0
-    },
-    {
-      "presentations": 120000,
-      "epoch": 3,
-      "rate_per_s": 28.84,
-      "eta_hours": 0.58,
-      "mean_spikes": 25.7,
-      "dead": 0
-    },
-    {
-      "presentations": 120512,
-      "epoch": 3,
-      "rate_per_s": 28.79,
-      "eta_hours": 0.57,
-      "mean_spikes": 25.7,
-      "dead": 0
-    },
-    {
-      "presentations": 121024,
-      "epoch": 3,
-      "rate_per_s": 28.75,
-      "eta_hours": 0.57,
-      "mean_spikes": 25.7,
-      "dead": 0
-    },
-    {
-      "presentations": 121536,
-      "epoch": 3,
-      "rate_per_s": 28.71,
-      "eta_hours": 0.57,
-      "mean_spikes": 25.6,
-      "dead": 0
-    },
-    {
-      "presentations": 122048,
-      "epoch": 3,
-      "rate_per_s": 28.67,
-      "eta_hours": 0.56,
-      "mean_spikes": 25.6,
-      "dead": 0
-    },
-    {
-      "presentations": 122560,
-      "epoch": 3,
-      "rate_per_s": 28.63,
-      "eta_hours": 0.56,
-      "mean_spikes": 25.6,
-      "dead": 0
-    },
-    {
-      "presentations": 123008,
-      "epoch": 3,
-      "rate_per_s": 28.59,
-      "eta_hours": 0.55,
-      "mean_spikes": 25.5,
-      "dead": 0
-    },
-    {
-      "presentations": 123520,
-      "epoch": 3,
-      "rate_per_s": 28.55,
-      "eta_hours": 0.55,
-      "mean_spikes": 25.5,
-      "dead": 0
-    },
-    {
-      "presentations": 124032,
-      "epoch": 3,
-      "rate_per_s": 28.51,
-      "eta_hours": 0.55,
-      "mean_spikes": 25.5,
-      "dead": 0
-    },
-    {
-      "presentations": 124544,
-      "epoch": 3,
-      "rate_per_s": 28.48,
-      "eta_hours": 0.54,
-      "mean_spikes": 25.4,
-      "dead": 0
-    },
-    {
-      "presentations": 125056,
-      "epoch": 3,
-      "rate_per_s": 28.45,
-      "eta_hours": 0.54,
-      "mean_spikes": 25.4,
-      "dead": 0
-    },
-    {
-      "presentations": 125504,
-      "epoch": 3,
-      "rate_per_s": 28.41,
-      "eta_hours": 0.53,
-      "mean_spikes": 25.4,
-      "dead": 0
-    },
-    {
-      "presentations": 126016,
-      "epoch": 3,
-      "rate_per_s": 28.36,
-      "eta_hours": 0.53,
-      "mean_spikes": 25.3,
-      "dead": 0
-    },
-    {
-      "presentations": 126528,
-      "epoch": 3,
-      "rate_per_s": 28.32,
-      "eta_hours": 0.52,
-      "mean_spikes": 25.3,
-      "dead": 0
-    },
-    {
-      "presentations": 127040,
-      "epoch": 3,
-      "rate_per_s": 28.29,
-      "eta_hours": 0.52,
-      "mean_spikes": 25.3,
-      "dead": 0
-    },
-    {
-      "presentations": 127552,
-      "epoch": 3,
-      "rate_per_s": 28.25,
-      "eta_hours": 0.52,
-      "mean_spikes": 25.2,
-      "dead": 0
-    },
-    {
-      "presentations": 128000,
-      "epoch": 3,
-      "rate_per_s": 28.21,
-      "eta_hours": 0.51,
-      "mean_spikes": 25.2,
-      "dead": 0
-    },
-    {
-      "presentations": 128512,
-      "epoch": 3,
-      "rate_per_s": 28.16,
-      "eta_hours": 0.51,
-      "mean_spikes": 25.2,
-      "dead": 0
-    },
-    {
-      "presentations": 129024,
-      "epoch": 3,
-      "rate_per_s": 28.11,
-      "eta_hours": 0.5,
-      "mean_spikes": 25.1,
-      "dead": 0
-    },
-    {
-      "presentations": 129536,
-      "epoch": 3,
-      "rate_per_s": 28.08,
-      "eta_hours": 0.5,
-      "mean_spikes": 25.1,
-      "dead": 0
-    },
-    {
-      "presentations": 130048,
-      "epoch": 3,
-      "rate_per_s": 28.04,
-      "eta_hours": 0.49,
-      "mean_spikes": 25.1,
-      "dead": 0
-    },
-    {
-      "presentations": 130560,
-      "epoch": 3,
-      "rate_per_s": 28.0,
-      "eta_hours": 0.49,
-      "mean_spikes": 25.0,
-      "dead": 0
-    },
-    {
-      "presentations": 131008,
-      "epoch": 3,
-      "rate_per_s": 27.97,
-      "eta_hours": 0.49,
-      "mean_spikes": 25.0,
-      "dead": 0
-    },
-    {
-      "presentations": 131520,
-      "epoch": 3,
-      "rate_per_s": 27.93,
-      "eta_hours": 0.48,
-      "mean_spikes": 25.0,
-      "dead": 0
-    },
-    {
-      "presentations": 132032,
-      "epoch": 3,
-      "rate_per_s": 27.89,
-      "eta_hours": 0.48,
-      "mean_spikes": 24.9,
-      "dead": 0
-    },
-    {
-      "presentations": 132544,
-      "epoch": 3,
-      "rate_per_s": 27.85,
-      "eta_hours": 0.47,
-      "mean_spikes": 24.9,
-      "dead": 0
-    },
-    {
-      "presentations": 133056,
-      "epoch": 3,
-      "rate_per_s": 27.81,
-      "eta_hours": 0.47,
-      "mean_spikes": 24.9,
-      "dead": 0
-    },
-    {
-      "presentations": 133504,
-      "epoch": 3,
-      "rate_per_s": 27.78,
-      "eta_hours": 0.46,
-      "mean_spikes": 24.9,
-      "dead": 0
-    },
-    {
-      "presentations": 134016,
-      "epoch": 3,
-      "rate_per_s": 27.74,
-      "eta_hours": 0.46,
-      "mean_spikes": 24.8,
-      "dead": 0
-    },
-    {
-      "presentations": 134528,
-      "epoch": 3,
-      "rate_per_s": 27.71,
-      "eta_hours": 0.46,
-      "mean_spikes": 24.8,
-      "dead": 0
-    },
-    {
-      "presentations": 135040,
-      "epoch": 3,
-      "rate_per_s": 27.68,
-      "eta_hours": 0.45,
-      "mean_spikes": 24.8,
-      "dead": 0
-    },
-    {
-      "presentations": 135552,
-      "epoch": 3,
-      "rate_per_s": 27.64,
-      "eta_hours": 0.45,
-      "mean_spikes": 24.7,
-      "dead": 0
-    },
-    {
-      "presentations": 136000,
-      "epoch": 3,
-      "rate_per_s": 27.62,
-      "eta_hours": 0.44,
-      "mean_spikes": 24.7,
-      "dead": 0
-    },
-    {
-      "presentations": 136512,
-      "epoch": 3,
-      "rate_per_s": 27.57,
-      "eta_hours": 0.44,
-      "mean_spikes": 24.7,
-      "dead": 0
-    },
-    {
-      "presentations": 137024,
-      "epoch": 3,
-      "rate_per_s": 27.53,
-      "eta_hours": 0.43,
-      "mean_spikes": 24.6,
-      "dead": 0
-    },
-    {
-      "presentations": 137536,
-      "epoch": 3,
-      "rate_per_s": 27.49,
-      "eta_hours": 0.43,
-      "mean_spikes": 24.6,
-      "dead": 0
-    },
-    {
-      "presentations": 138048,
-      "epoch": 3,
-      "rate_per_s": 27.45,
-      "eta_hours": 0.42,
-      "mean_spikes": 24.6,
-      "dead": 0
-    },
-    {
-      "presentations": 138560,
-      "epoch": 3,
-      "rate_per_s": 27.41,
-      "eta_hours": 0.42,
-      "mean_spikes": 24.5,
-      "dead": 0
-    },
-    {
-      "presentations": 139008,
-      "epoch": 3,
-      "rate_per_s": 27.37,
-      "eta_hours": 0.42,
-      "mean_spikes": 24.5,
-      "dead": 0
-    },
-    {
-      "presentations": 139520,
-      "epoch": 3,
-      "rate_per_s": 27.33,
-      "eta_hours": 0.41,
-      "mean_spikes": 24.5,
-      "dead": 0
-    },
-    {
-      "presentations": 140032,
-      "epoch": 3,
-      "rate_per_s": 27.28,
-      "eta_hours": 0.41,
-      "mean_spikes": 24.5,
-      "dead": 0
-    },
-    {
-      "presentations": 140544,
-      "epoch": 3,
-      "rate_per_s": 27.25,
-      "eta_hours": 0.4,
-      "mean_spikes": 24.4,
-      "dead": 0
-    },
-    {
-      "presentations": 141056,
-      "epoch": 3,
-      "rate_per_s": 27.21,
-      "eta_hours": 0.4,
-      "mean_spikes": 24.4,
-      "dead": 0
-    },
-    {
-      "presentations": 141504,
-      "epoch": 3,
-      "rate_per_s": 27.17,
-      "eta_hours": 0.39,
-      "mean_spikes": 24.4,
-      "dead": 0
-    },
-    {
-      "presentations": 142016,
-      "epoch": 3,
-      "rate_per_s": 27.13,
-      "eta_hours": 0.39,
-      "mean_spikes": 24.3,
-      "dead": 0
-    },
-    {
-      "presentations": 142528,
-      "epoch": 3,
-      "rate_per_s": 27.09,
-      "eta_hours": 0.38,
-      "mean_spikes": 24.3,
-      "dead": 0
-    },
-    {
-      "presentations": 143040,
-      "epoch": 3,
-      "rate_per_s": 27.06,
-      "eta_hours": 0.38,
-      "mean_spikes": 24.3,
-      "dead": 0
-    },
-    {
-      "presentations": 143552,
-      "epoch": 3,
-      "rate_per_s": 27.02,
-      "eta_hours": 0.37,
-      "mean_spikes": 24.3,
-      "dead": 0
-    },
-    {
-      "presentations": 144000,
-      "epoch": 3,
-      "rate_per_s": 26.98,
-      "eta_hours": 0.37,
-      "mean_spikes": 24.2,
-      "dead": 0
-    },
-    {
-      "presentations": 144512,
-      "epoch": 3,
-      "rate_per_s": 26.94,
-      "eta_hours": 0.37,
-      "mean_spikes": 24.2,
-      "dead": 0
-    },
-    {
-      "presentations": 145024,
-      "epoch": 3,
-      "rate_per_s": 26.9,
-      "eta_hours": 0.36,
-      "mean_spikes": 24.2,
-      "dead": 0
-    },
-    {
-      "presentations": 145536,
-      "epoch": 3,
-      "rate_per_s": 26.86,
-      "eta_hours": 0.36,
-      "mean_spikes": 24.2,
-      "dead": 0
-    },
-    {
-      "presentations": 146048,
-      "epoch": 3,
-      "rate_per_s": 26.81,
-      "eta_hours": 0.35,
-      "mean_spikes": 24.1,
-      "dead": 0
-    },
-    {
-      "presentations": 146560,
-      "epoch": 3,
-      "rate_per_s": 26.77,
-      "eta_hours": 0.35,
-      "mean_spikes": 24.1,
-      "dead": 0
-    },
-    {
-      "presentations": 147008,
-      "epoch": 3,
-      "rate_per_s": 26.73,
-      "eta_hours": 0.34,
-      "mean_spikes": 24.1,
-      "dead": 0
-    },
-    {
-      "presentations": 147520,
-      "epoch": 3,
-      "rate_per_s": 26.69,
-      "eta_hours": 0.34,
-      "mean_spikes": 24.1,
-      "dead": 0
-    },
-    {
-      "presentations": 148032,
-      "epoch": 3,
-      "rate_per_s": 26.65,
-      "eta_hours": 0.33,
-      "mean_spikes": 24.0,
-      "dead": 0
-    },
-    {
-      "presentations": 148544,
-      "epoch": 3,
-      "rate_per_s": 26.61,
-      "eta_hours": 0.33,
-      "mean_spikes": 24.0,
-      "dead": 0
-    },
-    {
-      "presentations": 149056,
-      "epoch": 3,
-      "rate_per_s": 26.57,
-      "eta_hours": 0.32,
-      "mean_spikes": 24.0,
-      "dead": 0
-    },
-    {
-      "presentations": 149504,
-      "epoch": 3,
-      "rate_per_s": 26.53,
-      "eta_hours": 0.32,
-      "mean_spikes": 23.9,
-      "dead": 0
-    },
-    {
-      "presentations": 150016,
-      "epoch": 3,
-      "rate_per_s": 26.5,
-      "eta_hours": 0.31,
-      "mean_spikes": 23.9,
-      "dead": 0
-    },
-    {
-      "presentations": 150528,
-      "epoch": 3,
-      "rate_per_s": 26.46,
-      "eta_hours": 0.31,
-      "mean_spikes": 23.9,
-      "dead": 0
-    },
-    {
-      "presentations": 151040,
-      "epoch": 3,
-      "rate_per_s": 26.42,
-      "eta_hours": 0.3,
-      "mean_spikes": 23.9,
-      "dead": 0
-    },
-    {
-      "presentations": 151552,
-      "epoch": 3,
-      "rate_per_s": 26.38,
-      "eta_hours": 0.3,
-      "mean_spikes": 23.8,
-      "dead": 0
-    },
-    {
-      "presentations": 152000,
-      "epoch": 3,
-      "rate_per_s": 26.35,
-      "eta_hours": 0.3,
-      "mean_spikes": 23.8,
-      "dead": 0
-    },
-    {
-      "presentations": 152512,
-      "epoch": 3,
-      "rate_per_s": 26.31,
-      "eta_hours": 0.29,
-      "mean_spikes": 23.8,
-      "dead": 0
-    },
-    {
-      "presentations": 153024,
-      "epoch": 3,
-      "rate_per_s": 26.27,
-      "eta_hours": 0.29,
-      "mean_spikes": 23.8,
-      "dead": 0
-    },
-    {
-      "presentations": 153536,
-      "epoch": 3,
-      "rate_per_s": 26.24,
-      "eta_hours": 0.28,
-      "mean_spikes": 23.7,
-      "dead": 0
-    },
-    {
-      "presentations": 154048,
-      "epoch": 3,
-      "rate_per_s": 26.21,
-      "eta_hours": 0.28,
-      "mean_spikes": 23.7,
-      "dead": 0
-    },
-    {
-      "presentations": 154560,
-      "epoch": 3,
-      "rate_per_s": 26.17,
-      "eta_hours": 0.27,
-      "mean_spikes": 23.7,
-      "dead": 0
-    },
-    {
-      "presentations": 155008,
-      "epoch": 3,
-      "rate_per_s": 26.14,
-      "eta_hours": 0.27,
-      "mean_spikes": 23.7,
-      "dead": 0
-    },
-    {
-      "presentations": 155520,
-      "epoch": 3,
-      "rate_per_s": 26.1,
-      "eta_hours": 0.26,
-      "mean_spikes": 23.6,
-      "dead": 0
-    },
-    {
-      "presentations": 156032,
-      "epoch": 3,
-      "rate_per_s": 26.05,
-      "eta_hours": 0.26,
-      "mean_spikes": 23.6,
-      "dead": 0
-    },
-    {
-      "presentations": 156544,
-      "epoch": 3,
-      "rate_per_s": 26.01,
-      "eta_hours": 0.25,
-      "mean_spikes": 23.6,
-      "dead": 0
-    },
-    {
-      "presentations": 157056,
-      "epoch": 3,
-      "rate_per_s": 25.96,
-      "eta_hours": 0.25,
-      "mean_spikes": 23.6,
-      "dead": 0
-    },
-    {
-      "presentations": 157504,
-      "epoch": 3,
-      "rate_per_s": 25.93,
-      "eta_hours": 0.24,
-      "mean_spikes": 23.5,
-      "dead": 0
-    },
-    {
-      "presentations": 158016,
-      "epoch": 3,
-      "rate_per_s": 25.89,
-      "eta_hours": 0.24,
-      "mean_spikes": 23.5,
-      "dead": 0
-    },
-    {
-      "presentations": 158528,
-      "epoch": 3,
-      "rate_per_s": 25.85,
-      "eta_hours": 0.23,
-      "mean_spikes": 23.5,
-      "dead": 0
-    },
-    {
-      "presentations": 159040,
-      "epoch": 3,
-      "rate_per_s": 25.82,
-      "eta_hours": 0.23,
-      "mean_spikes": 23.5,
-      "dead": 0
-    },
-    {
-      "presentations": 159552,
-      "epoch": 3,
-      "rate_per_s": 25.78,
-      "eta_hours": 0.22,
-      "mean_spikes": 23.4,
-      "dead": 0
-    },
-    {
-      "presentations": 160000,
-      "epoch": 3,
-      "rate_per_s": 25.74,
-      "eta_hours": 0.22,
-      "mean_spikes": 23.4,
-      "dead": 0
-    },
-    {
-      "presentations": 160512,
-      "epoch": 3,
-      "rate_per_s": 25.7,
-      "eta_hours": 0.21,
-      "mean_spikes": 23.4,
-      "dead": 0
-    },
-    {
-      "presentations": 161024,
-      "epoch": 3,
-      "rate_per_s": 25.65,
-      "eta_hours": 0.21,
-      "mean_spikes": 23.4,
-      "dead": 0
-    },
-    {
-      "presentations": 161536,
-      "epoch": 3,
-      "rate_per_s": 25.61,
-      "eta_hours": 0.2,
-      "mean_spikes": 23.3,
-      "dead": 0
-    },
-    {
-      "presentations": 162048,
-      "epoch": 3,
-      "rate_per_s": 25.56,
-      "eta_hours": 0.2,
-      "mean_spikes": 23.3,
-      "dead": 0
-    },
-    {
-      "presentations": 162560,
-      "epoch": 3,
-      "rate_per_s": 25.52,
-      "eta_hours": 0.19,
-      "mean_spikes": 23.3,
-      "dead": 0
-    },
-    {
-      "presentations": 163008,
-      "epoch": 3,
-      "rate_per_s": 25.48,
-      "eta_hours": 0.19,
-      "mean_spikes": 23.3,
-      "dead": 0
-    },
-    {
-      "presentations": 163520,
-      "epoch": 3,
-      "rate_per_s": 25.44,
-      "eta_hours": 0.18,
-      "mean_spikes": 23.3,
-      "dead": 0
-    },
-    {
-      "presentations": 164032,
-      "epoch": 3,
-      "rate_per_s": 25.4,
-      "eta_hours": 0.17,
-      "mean_spikes": 23.2,
-      "dead": 0
-    },
-    {
-      "presentations": 164544,
-      "epoch": 3,
-      "rate_per_s": 25.37,
-      "eta_hours": 0.17,
-      "mean_spikes": 23.2,
-      "dead": 0
-    },
-    {
-      "presentations": 165056,
-      "epoch": 3,
-      "rate_per_s": 25.33,
-      "eta_hours": 0.16,
-      "mean_spikes": 23.2,
-      "dead": 0
-    },
-    {
-      "presentations": 165504,
-      "epoch": 3,
-      "rate_per_s": 25.29,
-      "eta_hours": 0.16,
-      "mean_spikes": 23.2,
-      "dead": 0
-    },
-    {
-      "presentations": 166016,
-      "epoch": 3,
-      "rate_per_s": 25.24,
-      "eta_hours": 0.15,
-      "mean_spikes": 23.1,
-      "dead": 0
-    },
-    {
-      "presentations": 166528,
-      "epoch": 3,
-      "rate_per_s": 25.2,
-      "eta_hours": 0.15,
-      "mean_spikes": 23.1,
-      "dead": 0
-    },
-    {
-      "presentations": 167040,
-      "epoch": 3,
-      "rate_per_s": 25.15,
-      "eta_hours": 0.14,
-      "mean_spikes": 23.1,
-      "dead": 0
-    },
-    {
-      "presentations": 167552,
-      "epoch": 3,
-      "rate_per_s": 25.11,
-      "eta_hours": 0.14,
-      "mean_spikes": 23.1,
-      "dead": 0
-    },
-    {
-      "presentations": 168000,
-      "epoch": 3,
-      "rate_per_s": 25.07,
-      "eta_hours": 0.13,
-      "mean_spikes": 23.1,
-      "dead": 0
-    },
-    {
-      "presentations": 168512,
-      "epoch": 3,
-      "rate_per_s": 25.03,
-      "eta_hours": 0.13,
-      "mean_spikes": 23.0,
-      "dead": 0
-    },
-    {
-      "presentations": 169024,
-      "epoch": 3,
-      "rate_per_s": 24.99,
-      "eta_hours": 0.12,
-      "mean_spikes": 23.0,
-      "dead": 0
-    },
-    {
-      "presentations": 169536,
-      "epoch": 3,
-      "rate_per_s": 24.94,
-      "eta_hours": 0.12,
-      "mean_spikes": 23.0,
-      "dead": 0
-    },
-    {
-      "presentations": 170048,
-      "epoch": 3,
-      "rate_per_s": 24.91,
-      "eta_hours": 0.11,
-      "mean_spikes": 23.0,
-      "dead": 0
-    },
-    {
-      "presentations": 170560,
-      "epoch": 3,
-      "rate_per_s": 24.87,
-      "eta_hours": 0.11,
-      "mean_spikes": 22.9,
-      "dead": 0
-    },
-    {
-      "presentations": 171008,
-      "epoch": 3,
-      "rate_per_s": 24.84,
-      "eta_hours": 0.1,
-      "mean_spikes": 22.9,
-      "dead": 0
-    },
-    {
-      "presentations": 171520,
-      "epoch": 3,
-      "rate_per_s": 24.79,
-      "eta_hours": 0.1,
-      "mean_spikes": 22.9,
-      "dead": 0
-    },
-    {
-      "presentations": 172032,
-      "epoch": 3,
-      "rate_per_s": 24.75,
-      "eta_hours": 0.09,
-      "mean_spikes": 22.9,
-      "dead": 0
-    },
-    {
-      "presentations": 172544,
-      "epoch": 3,
-      "rate_per_s": 24.71,
-      "eta_hours": 0.08,
-      "mean_spikes": 22.9,
-      "dead": 0
-    },
-    {
-      "presentations": 173056,
-      "epoch": 3,
-      "rate_per_s": 24.67,
-      "eta_hours": 0.08,
-      "mean_spikes": 22.8,
-      "dead": 0
-    },
-    {
-      "presentations": 173504,
-      "epoch": 3,
-      "rate_per_s": 24.64,
-      "eta_hours": 0.07,
-      "mean_spikes": 22.8,
-      "dead": 0
-    },
-    {
-      "presentations": 174016,
-      "epoch": 3,
-      "rate_per_s": 24.6,
-      "eta_hours": 0.07,
-      "mean_spikes": 22.8,
-      "dead": 0
-    },
-    {
-      "presentations": 174528,
-      "epoch": 3,
-      "rate_per_s": 24.57,
-      "eta_hours": 0.06,
-      "mean_spikes": 22.8,
-      "dead": 0
-    },
-    {
-      "presentations": 175040,
-      "epoch": 3,
-      "rate_per_s": 24.53,
-      "eta_hours": 0.06,
-      "mean_spikes": 22.8,
-      "dead": 0
-    },
-    {
-      "presentations": 175552,
-      "epoch": 3,
-      "rate_per_s": 24.49,
-      "eta_hours": 0.05,
-      "mean_spikes": 22.7,
-      "dead": 0
-    },
-    {
-      "presentations": 176000,
-      "epoch": 3,
-      "rate_per_s": 24.45,
-      "eta_hours": 0.05,
-      "mean_spikes": 22.7,
-      "dead": 0
-    },
-    {
-      "presentations": 176512,
-      "epoch": 3,
-      "rate_per_s": 24.42,
-      "eta_hours": 0.04,
-      "mean_spikes": 22.7,
-      "dead": 0
-    },
-    {
-      "presentations": 177024,
-      "epoch": 3,
-      "rate_per_s": 24.37,
-      "eta_hours": 0.03,
-      "mean_spikes": 22.7,
-      "dead": 0
-    },
-    {
-      "presentations": 177536,
-      "epoch": 3,
-      "rate_per_s": 24.33,
-      "eta_hours": 0.03,
-      "mean_spikes": 22.7,
-      "dead": 0
-    },
-    {
-      "presentations": 178048,
-      "epoch": 3,
-      "rate_per_s": 24.28,
-      "eta_hours": 0.02,
-      "mean_spikes": 22.6,
-      "dead": 0
-    },
-    {
-      "presentations": 178560,
-      "epoch": 3,
-      "rate_per_s": 24.23,
-      "eta_hours": 0.02,
-      "mean_spikes": 22.6,
-      "dead": 0
-    },
-    {
-      "presentations": 179008,
-      "epoch": 3,
-      "rate_per_s": 24.19,
+      "rate_per_s": 10.71,
       "eta_hours": 0.01,
-      "mean_spikes": 22.6,
-      "dead": 0
-    },
-    {
-      "presentations": 179520,
-      "epoch": 3,
-      "rate_per_s": 24.14,
-      "eta_hours": 0.01,
-      "mean_spikes": 22.6,
+      "mean_spikes": 15.9,
       "dead": 0
     }
   ],
-  "summary": "179904 presentasi, 3 epoch, 124.4 menit, 22.6 spike/presentasi, 0 neuron mati"
+  "summary": "59968 presentasi, 1 epoch, 93.5 menit, 15.9 spike/presentasi, 0 neuron mati"
 }
