@@ -82,6 +82,8 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--seed", type=int, default=0)
     ap.add_argument("--inhibition", type=float, default=1600.0)
     ap.add_argument("--e-to-i", type=float, default=1600.0)
+    ap.add_argument("--rest-ms", type=float, default=0.0,
+                   help="jeda zero-input setelah presentasi (ms)")
     ap.add_argument("--out", default="", help="tulis hasil JSON ke path ini")
     ap.add_argument(
         "--save-readout",

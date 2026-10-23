@@ -46,6 +46,10 @@ on:
         description: "e_to_i_strength saat training (checkpoint lama tidak menyimpannya)"
         required: false
         default: "1600"
+      rest_ms:
+        description: "rest_ms saat training"
+        required: false
+        default: "0"
 
 jobs:
   ridge:
@@ -114,6 +118,7 @@ jobs:
             --trials ${{ github.event.inputs.trials }} \
             --inhibition ${{ github.event.inputs.inhibition }} \
             --e-to-i ${{ github.event.inputs.e_to_i || '1600' }} \
+            --rest-ms ${{ github.event.inputs.rest_ms || '0' }} \
             --out runs/ridge/ridge.json | tee runs/ridge/ridge.txt
 
       - name: Ringkasan
