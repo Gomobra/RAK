@@ -246,6 +246,8 @@ def run(args: argparse.Namespace) -> int:
                 theta_plus=args.theta_plus,
                 theta_max=args.theta_max,
                 e_to_i_strength=args.e_to_i,
+                delay_max_in_ms=args.delay_max,
+                rest_ms=args.rest_ms,
             ),
             stdp_config=Eq3Config(eta=args.eta),
             seed=args.seed,
@@ -268,6 +270,8 @@ def run(args: argparse.Namespace) -> int:
                 theta_plus=args.theta_plus,
                 theta_max=args.theta_max,
                 e_to_i_strength=args.e_to_i,
+                delay_max_in_ms=args.delay_max,
+                rest_ms=args.rest_ms,
                 out_dir=str(out_dir),
                 log_every=args.log_every,
                 checkpoint_every=args.checkpoint_every,
@@ -456,6 +460,10 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--theta-plus", type=float, default=0.0125)
     p.add_argument("--theta-max", type=float, default=40.0)
     p.add_argument("--e-to-i", type=float, default=1600.0)
+    p.add_argument("--delay-max", type=float, default=0.0,
+                   help="delay input->E maksimum (ms), acuan 10")
+    p.add_argument("--rest-ms", type=float, default=0.0,
+                   help="jeda zero-input setelah presentasi (ms), acuan 150")
     p.add_argument("--reassign", action="store_true",
                    help="dengan --resume: abaikan assignments tersimpan, "
                         "hitung ulang dari data train")

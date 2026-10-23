@@ -350,7 +350,13 @@ def test_training_loop_takes_no_labels():
     melihat akurasinya.
     """
     params = list(inspect.signature(CompetitiveNetwork.present_batch).parameters)
-    assert params == ["self", "z_pre", "learn"], params
+    # `rest_steps` boleh ada (peluruhan conductance), tapi label
+    # TIDAK boleh masuk ke loop STDP -- itu jaminan struktural
+    # bahwa Phase 3 ini unsupervised.
+    assert "self" in params and "z_pre" in params and "learn" in params
+    assert not any(
+        p in params for p in ("label", "labels", "target", "targets", "y")
+    ), params
 
 
 def test_config_defaults_match_paper():

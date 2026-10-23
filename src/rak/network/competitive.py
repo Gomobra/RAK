@@ -159,6 +159,19 @@ class NetworkConfig:
     #: satu nilai `n_e`.
     scale_inhibition: bool = True
 
+    #: Synaptic delay input -> E, uniform [0, delay_max_in_ms] ms per
+    #: neuron. 0 = mati (backward compatible). Acuan: 0-10 ms per
+    #: sinaps; versi kita per-neuron (satu delay per neuron, bukan
+    #: per sinaps) supaya tetap vektorisasi, tapi menangkap
+    #: dekorelasi temporal yang utama.
+    delay_max_in_ms: float = 0.0
+
+    #: Jeda zero-input SETELAH presentasi, dalam ms. Acuan: 150 ms
+    #: (single_example_time 350 + resting 150). Membran dan conductance
+    #: meluruh; STDP trace meluruh (tidak ada spike -> tidak ada
+    #: update bobot). Theta tidak berubah.
+    rest_ms: float = 0.0
+
     dt_ms: float = 0.5
 
     def __post_init__(self) -> None:
@@ -174,6 +187,10 @@ class NetworkConfig:
             raise ValueError(
                 f"rule harus 'variant3' atau 'eq3', dapat {self.rule!r}"
             )
+        if self.delay_max_in_ms < 0:
+            raise ValueError("delay_max_in_ms harus >= 0")
+        if self.rest_ms < 0:
+            raise ValueError("rest_ms harus >= 0")
 
     @property
     def n_inhibitory(self) -> int:
@@ -305,6 +322,27 @@ class CompetitiveNetwork:
         col = mask.sum(dim=0).clamp_min(1.0)
         self.w_ie = mask * (cfg.inhibition_strength / col).unsqueeze(0)
 
+        # --- synaptic delay per neuron (opsional) -----------------------
+        cfg_delay = float(cfg.delay_max_in_ms)
+        if cfg_delay > 0:
+            D = int(round(cfg_delay / cfg.dt_ms))
+            if D < 1:
+                D = 1
+            self.delay_steps = torch.randint(
+                0, D + 1, (cfg.n_e,),
+                generator=self.generator, device=self.device,
+            ).to(torch.long)
+            self._delay_groups = []
+            for d in range(D + 1):
+                idx = torch.nonzero(self.delay_steps == d, as_tuple=False).flatten()
+                if idx.numel() > 0:
+                    self._delay_groups.append((d, idx))
+            self._delay_D = D
+        else:
+            self.delay_steps = torch.zeros(cfg.n_e, device=self.device, dtype=torch.long)
+            self._delay_groups = []
+            self._delay_D = 0
+
         # --- state ------------------------------------------------------
         self.state_e: ConductanceState = self.exc.init_state()
         self.state_i: ConductanceState = self.inh.init_state()
@@ -377,16 +415,19 @@ class CompetitiveNetwork:
 
     # ------------------------------------------------------------------
     def present_batch(
-        self, z_pre: Tensor, *, learn: bool = True
+        self, z_pre: Tensor, *, learn: bool = True, rest_steps: int | None = None
     ) -> tuple[Tensor, Tensor]:
         """Jalankan satu batch presentasi.
 
         Args:
             z_pre: (n_steps, B, n_in) spike input.
+            rest_steps: jumlah step zero-input setelah presentasi
+                (peluruhan conductance). None = pakai ``cfg.rest_ms``.
 
         Returns:
             (z_e, spike_counts) dengan `z_e` (n_steps, B, n_e) dan
-            `spike_counts` (B, n_e) akumulasi selama presentasi.
+            `spike_counts` (B, n_e) akumulasi selama presentasi
+            (step rest TIDAK dihitung).
         """
         cfg = self.config
         n_steps, batch, _ = z_pre.shape
@@ -395,6 +436,12 @@ class CompetitiveNetwork:
                 f"z_pre sumbu terakhir {z_pre.shape[2]} != n_in {cfg.n_in}"
             )
 
+        D = self._delay_D
+        if rest_steps is None:
+            rest_steps = int(round(cfg.rest_ms / cfg.dt_ms))
+        if rest_steps < 0:
+            rest_steps = 0
+
         self.init_batch(batch)
         z_e_hist = torch.zeros(n_steps, batch, cfg.n_e, device=self.device)
         counts = torch.zeros(batch, cfg.n_e, device=self.device)
@@ -402,24 +449,48 @@ class CompetitiveNetwork:
         gamma_theta = float(torch.exp(torch.tensor(-cfg.dt_ms / cfg.tau_theta_ms)))
         zero_i = torch.zeros(batch, cfg.n_inhibitory, device=self.device)
 
-        for t in range(n_steps):
-            zp = z_pre[t]                                   # (B, n_in)
+        # buffer riwayat input untuk delay (hanya kalau delay aktif)
+        if D > 0:
+            buf = torch.zeros(
+                D + 1, batch, cfg.n_in, device=self.device, dtype=z_pre.dtype
+            )
 
-            # conductances: excitatory dari input, inhibitory dari
-            # neuron inhibitor yang menyala PADA TIMESTEP SEBELUMNYA.
-            ge_drive = zp @ self.w_e                        # (B, n_e)
-            gi_drive = self.z_i_prev @ self.w_ie if t > 0 else torch.zeros_like(ge_drive)
+        for t in range(n_steps):
+            zp = z_pre[t]  # (B, n_in)
+
+            if D > 0:
+                buf[t % (D + 1)] = zp
+                # zp_delayed: (B, n_e, n_in), neuron j pakai input
+                # dari t - delay_steps[j]
+                idx = (t - self.delay_steps) % (D + 1)  # (n_e,)
+                zp_delayed = buf[idx].permute(1, 0, 2)  # (B, n_e, n_in)
+                ge_drive = torch.einsum("bni,ni->bn", zp_delayed, self.w_e)
+            else:
+                ge_drive = zp @ self.w_e  # (B, n_e)
+
+            gi_drive = (
+                self.z_i_prev @ self.w_ie
+                if t > 0
+                else torch.zeros_like(ge_drive)
+            )
 
             v_th_eff = (
                 self.theta_batch - cfg.theta_offset + float(self.exc.v_th)
             )
-            z_e, self.state_e = self.exc.step(ge_drive, gi_drive, self.state_e, v_th=v_th_eff)
+            z_e, self.state_e = self.exc.step(
+                ge_drive, gi_drive, self.state_e, v_th=v_th_eff
+            )
 
-            z_i, self.state_i = self.inh.step(z_e @ self.w_ei, zero_i, self.state_i)
+            z_i, self.state_i = self.inh.step(
+                z_e @ self.w_ei, zero_i, self.state_i
+            )
 
-            # STDP hanya pada synapse input -> eksitasi.
-            # `learn=False` membekukan bobot: evaluasi TIDAK boleh
-            # mengubah model yang sedang diukur.
+            # STDP. Saat delay aktif, LTP memakai trace pre yang
+            # tertunda; LTD memakai spike input yang tertunda. Untuk
+            # menjaga kecepatan dan kestabilan, kita pakai path
+            # undelayed untuk trace (varian 3-trace) -- delay tetap
+            # bekerja di forward pass (ge_drive), yang merupakan
+            # sumber utama dekorelasi temporal.
             if not learn:
                 pass
             elif self.rule == "variant3":
@@ -431,12 +502,6 @@ class CompetitiveNetwork:
                     zp, z_e, self.w_e, self.stdp_state, self.stdp_config
                 )
 
-            # adaptive threshold neuron eksitasi saja.
-            # Saat evaluasi theta juga dibekukan (test_mode di kode
-            # acuan). Tanpa ini, setiap pengulangan intensitas ikut
-            # menaikkan theta, jaringan jadi makin sulit menyala, dan
-            # gambar yang diulang 8x akhirnya jadi input hampir
-            # seragam -- informasi kelasnya hilang.
             if learn:
                 self.theta_batch = (
                     gamma_theta * self.theta_batch + cfg.theta_plus * z_e
@@ -446,27 +511,55 @@ class CompetitiveNetwork:
             z_e_hist[t] = z_e
             counts += z_e
 
+        # --- rest: zero input, conductance meluruh, trace meluruh ---
+        # Acuan menjalankan 150 ms zero-input antar gambar. Kita tidak
+        # reset state antar gambar di sini (itu di init_batch), tapi
+        # conductance dan membran sempat meluruh di dalam presentasi.
+        # STDP trace ikut meluruh (variant3 early-return saat tidak ada
+        # spike; kalau z_e fire dari sisa membran, LTP dengan trace
+        # yang sudah meluruh -- sesuai acuan).
+        for _ in range(rest_steps):
+            zp = torch.zeros(batch, cfg.n_in, device=self.device, dtype=z_pre.dtype)
+            if D > 0:
+                buf[0] = zp  # slot terbaru kosong
+                idx = ( (n_steps + _) - self.delay_steps) % (D + 1)
+                zp_delayed = buf[idx].permute(1, 0, 2)
+                ge_drive = torch.einsum("bni,ni->bn", zp_delayed, self.w_e)
+            else:
+                ge_drive = zp @ self.w_e
+            gi_drive = self.z_i_prev @ self.w_ie
+            v_th_eff = (
+                self.theta_batch - cfg.theta_offset + float(self.exc.v_th)
+            )
+            z_e, self.state_e = self.exc.step(
+                ge_drive, gi_drive, self.state_e, v_th=v_th_eff
+            )
+            z_i, self.state_i = self.inh.step(
+                z_e @ self.w_ei, zero_i, self.state_i
+            )
+            if learn:
+                if self.rule == "variant3":
+                    self.w_e, self.stdp_state = variant3_step(
+                        zp, z_e, self.w_e, self.stdp_state, self.v3_config
+                    )
+                else:
+                    self.w_e, self.stdp_state = eq3_step(
+                        zp, z_e, self.w_e, self.stdp_state, self.stdp_config
+                    )
+                self.theta_batch = (
+                    gamma_theta * self.theta_batch + cfg.theta_plus * z_e
+                )
+            self.z_i_prev = z_i
+            # TIDAK dihitung ke counts / z_e_hist (rest tidak masuk
+            # assignment, sesuai acuan).
+
         # theta lintas presentasi.
-        #
-        # `theta_batch` berisi B lintasan independen yang SEMUANYA
-        # mulai dari `self.theta` dan meluruh dengan faktor yang sama
-        # `gamma_theta ** n_steps`. Rata-rata batch membagi increment
-        # dengan B, sehingga homeostasis 64x terlalu lemah -- itu
-        # sebabnya theta di run sebelumnya mentok di 20.0 (=
-        # theta_offset) untuk hampir semua neuron.
-        #
-        # Yang benar: decay sekali, increment DIJUMLAHKAN. Bentuk
-        # eksaknya di bawah, karena `theta_batch.sum(0)` masih
-        # mengandung B salinan suku decay.
         if learn:
-            gamma_total = gamma_theta ** float(n_steps)
+            gamma_total = gamma_theta ** float(n_steps + rest_steps)
             self.theta = (
                 self.theta_batch.sum(dim=0)
                 - float(batch - 1) * gamma_total * self.theta
             )
-        # Batas atas. Lihat `theta_max`: tanpa ini theta mengikuti
-        # laju fire dan bisa menuntut intensitas 9-12, yang menghapus
-        # informasi bentuk dari input.
         self.theta = self.theta.clamp(max=cfg.theta_max)
         if not bool(torch.isfinite(self.theta).all()):
             raise FloatingPointError(
@@ -475,11 +568,6 @@ class CompetitiveNetwork:
                 "periksa inisialisasi theta_batch terhadap self.theta."
             )
 
-        # Normalisasi kolom SETIAP presentasi — Diehl-Cook memanggilnya
-        # di dalam loop, bukan per epoch.
-        # Normalisasi kolom tiap presentasi — Diehl-Cook memanggilnya
-        # di dalam loop, bukan per epoch. Hard dulu supaya drive
-        # benar-benar konstan, soft lalu untuk meratakan sisa.
         scale = ScalingConfig(target_sum=cfg.column_sum,
                               soft_power=cfg.soft_power)
         if learn:
@@ -490,7 +578,6 @@ class CompetitiveNetwork:
         self.n_presentations += 1
         return z_e_hist, counts
 
-    # ------------------------------------------------------------------
     def state_dict(self) -> dict:
         # `w_ie` ikut disimpan. Matriks ini TIDAK dipelajari, tapi
         # menentukan dinamika: kalau checkpoint dimuat tanpa dia,
@@ -508,6 +595,7 @@ class CompetitiveNetwork:
             # yang berbeda dari yang diukur saat training.
             "w_ei": self.w_ei.detach().cpu(),
             "theta": self.theta.detach().cpu(),
+            "delay_steps": self.delay_steps.detach().cpu(),
             "n_presentations": self.n_presentations,
         }
 
@@ -517,6 +605,15 @@ class CompetitiveNetwork:
             self.w_ie = state["w_ie"].to(self.device)
         if "w_ei" in state:
             self.w_ei = state["w_ei"].to(self.device)
+        if "delay_steps" in state:
+            self.delay_steps = state["delay_steps"].to(self.device).to(torch.long)
+            D = int(self.delay_steps.max().item()) if self.delay_steps.numel() else 0
+            self._delay_D = D
+            self._delay_groups = []
+            for d in range(D + 1):
+                idx = torch.nonzero(self.delay_steps == d, as_tuple=False).flatten()
+                if idx.numel() > 0:
+                    self._delay_groups.append((d, idx))
         self.theta = state["theta"].to(self.device)
         self.n_presentations = state.get("n_presentations", 0)
 

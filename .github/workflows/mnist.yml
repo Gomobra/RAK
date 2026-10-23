@@ -59,6 +59,14 @@ on:
         description: "Bobot E->I (satu-satu)"
         required: false
         default: "1600"
+      delay_max:
+        description: "Delay input->E maksimum (ms), acuan 10"
+        required: false
+        default: "0"
+      rest_ms:
+        description: "Jeda zero-input setelah presentasi (ms), acuan 150"
+        required: false
+        default: "0"
       reassign:
         description: "Dengan resume_run: hitung ulang assignment (STDP mati), jangan pakai yang tersimpan"
         type: boolean
@@ -164,6 +172,8 @@ jobs:
             --theta-plus ${{ github.event.inputs.theta_plus || '0.0125' }} \
             --theta-max ${{ github.event.inputs.theta_max || '40' }} \
             --e-to-i ${{ github.event.inputs.e_to_i || '1600' }} \
+            --delay-max ${{ github.event.inputs.delay_max || '0' }} \
+            --rest-ms ${{ github.event.inputs.rest_ms || '0' }} \
             --rule ${{ github.event.inputs.rule || 'variant3' }} \
             --assign-samples ${{ github.event.inputs.assign || '0' }} \
             --test-limit ${{ github.event.inputs.test || '0' }} \

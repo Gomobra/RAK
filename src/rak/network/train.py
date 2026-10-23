@@ -84,6 +84,12 @@ class TrainConfig:
     #: Bobot E->I (satu-satu). Terpisah dari `inhibition_strength`.
     e_to_i_strength: float = 1600.0
 
+    #: Synaptic delay input -> E (ms). 0 = mati.
+    delay_max_in_ms: float = 0.0
+
+    #: Jeda zero-input setelah presentasi (ms). Acuan: 150.
+    rest_ms: float = 0.0
+
     #: Learning rate STDP Eq.3.
     eta: float = 1e-3
 
@@ -228,6 +234,8 @@ def train(
                 inhibition_strength=cfg.inhibition_strength, rule=cfg.rule,
                 theta_plus=cfg.theta_plus, theta_max=cfg.theta_max,
                 e_to_i_strength=cfg.e_to_i_strength,
+                delay_max_in_ms=cfg.delay_max_in_ms,
+                rest_ms=cfg.rest_ms,
             ),
             stdp_config=Eq3Config(eta=cfg.eta, dt_ms=enc.dt_ms),
             seed=cfg.seed,
