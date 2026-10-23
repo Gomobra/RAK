@@ -55,9 +55,22 @@ def test_shapes():
 
 
 def test_e_to_i_is_one_to_one():
-    """E -> I satu-satu (identitas), persis Diehl-Cook."""
+    """E -> I satu-satu (diagonal), persis Diehl-Cook.
+
+    Kekuatannya `e_to_i_strength`, bukan 1: default 1600 karena
+    `inhibition_strength` adalah column sum I->E. Yang penting
+    strukturnya: hanya diagonal yang bukan nol.
+    """
     net = _net(n_e=16)
-    assert torch.equal(net.w_ei, torch.eye(16))
+    diag = torch.diag(net.w_ei)
+    off = net.w_ei - torch.diag(diag)
+    assert torch.count_nonzero(off) == 0
+    assert torch.allclose(
+        diag, torch.full((16,), float(net.config.e_to_i_strength))
+    )
+
+    scaled = _net(n_e=4, e_to_i_strength=5.0)
+    assert torch.allclose(torch.diag(scaled.w_ei), torch.full((4,), 5.0))
 
 
 def test_i_to_e_is_positive_and_sparse():
