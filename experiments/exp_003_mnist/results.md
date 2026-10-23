@@ -19,6 +19,7 @@ kelas) dan untuk mengukur akurasi.
 | 7 | **400n, 3 epoch, theta_max=80** | **ridge, 5 trials** | **84.11%** |
 | 8 | 800n, 1 epoch, theta_max=80 | ridge, 5 trials | 74.61% |
 | 9 | **ensemble 3 model 400n** | **ridge, 5 trials** | **86.80%** |
+| 10 | **ensemble 5 model 400n** | **ridge, 5 trials** | **88.80%** |
 
 Catatan:
 
@@ -29,7 +30,12 @@ Catatan:
 - Ridge adalah classifier linear yang dilatih pada spike count data
   TRAIN saja (80% fit, 20% validasi untuk memilih alpha). Data test
   tidak pernah dipakai untuk memilih apa pun.
-- Konfigurasi #9 adalah hasil terbaik saat ini: ensemble tiga model
+- Konfigurasi #10 adalah hasil terbaik saat ini: ensemble lima model
+  400 neuron (tiga seed 3ep/theta80, satu 3ep/theta40, satu 1ep/theta80),
+  fitur spike count digabung (2000 dimensi) lalu ridge. Validasi
+  87.80, test 88.80. Recall per kelas:
+  [97.4, 98.7, 83.5, 88.4, 86.6, 82.0, 94.9, 88.6, 82.2, 84.0].
+- Konfigurasi #9 adalah hasil sebelumnya.
   400 neuron (3ep/theta80, 3ep/theta40, 1ep/theta80), fitur spike
   count digabung (1200 dimensi) lalu ridge. Validasi 85.60, test
   86.80.
