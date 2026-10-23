@@ -18,6 +18,14 @@ on:
         description: "Opsional: run ID ketiga"
         required: false
         default: ""
+      run_id_4:
+        description: "Opsional: run ID keempat"
+        required: false
+        default: ""
+      run_id_5:
+        description: "Opsional: run ID kelima"
+        required: false
+        default: ""
       train_samples:
         description: "Jumlah gambar TRAIN untuk fit+validasi readout"
         required: false
@@ -67,6 +75,12 @@ jobs:
           if [ -n "${{ github.event.inputs.run_id_3 }}" ]; then
             gh run download ${{ github.event.inputs.run_id_3 }} -D runs/ridge/c
           fi
+          if [ -n "${{ github.event.inputs.run_id_4 }}" ]; then
+            gh run download ${{ github.event.inputs.run_id_4 }} -D runs/ridge/d
+          fi
+          if [ -n "${{ github.event.inputs.run_id_5 }}" ]; then
+            gh run download ${{ github.event.inputs.run_id_5 }} -D runs/ridge/e
+          fi
           find runs/ridge -name weights.pt -not -path "*smoke*"
 
       - name: Fit readout
@@ -81,6 +95,14 @@ jobs:
           if [ -n "${{ github.event.inputs.run_id_3 }}" ]; then
             W3=$(find runs/ridge/c -name weights.pt -not -path "*smoke*" | head -1)
             EXTRA="$EXTRA $W3"
+          fi
+          if [ -n "${{ github.event.inputs.run_id_4 }}" ]; then
+            W4=$(find runs/ridge/d -name weights.pt -not -path "*smoke*" | head -1)
+            EXTRA="$EXTRA $W4"
+          fi
+          if [ -n "${{ github.event.inputs.run_id_5 }}" ]; then
+            W5=$(find runs/ridge/e -name weights.pt -not -path "*smoke*" | head -1)
+            EXTRA="$EXTRA $W5"
           fi
           python scripts/ridge_readout.py \
             --weights "$W" $EXTRA \
