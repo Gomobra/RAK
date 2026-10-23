@@ -415,7 +415,8 @@ class CompetitiveNetwork:
 
     # ------------------------------------------------------------------
     def present_batch(
-        self, z_pre: Tensor, *, learn: bool = True, rest_steps: int | None = None
+        self, z_pre: Tensor, *, learn: bool = True, rest_steps: int | None = None,
+        record_history: bool = False,
     ) -> tuple[Tensor, Tensor]:
         """Jalankan satu batch presentasi.
 
@@ -443,11 +444,15 @@ class CompetitiveNetwork:
             rest_steps = 0
 
         self.init_batch(batch)
-        z_e_hist = torch.zeros(n_steps, batch, cfg.n_e, device=self.device)
+        if record_history:
+            z_e_hist = torch.zeros(n_steps, batch, cfg.n_e, device=self.device)
+        else:
+            z_e_hist = None
         counts = torch.zeros(batch, cfg.n_e, device=self.device)
 
         gamma_theta = float(torch.exp(torch.tensor(-cfg.dt_ms / cfg.tau_theta_ms)))
         zero_i = torch.zeros(batch, cfg.n_inhibitory, device=self.device)
+        zero_ge = torch.zeros(batch, cfg.n_e, device=self.device)
 
         # buffer riwayat input untuk delay (hanya kalau delay aktif)
         if D > 0:
@@ -471,7 +476,7 @@ class CompetitiveNetwork:
             gi_drive = (
                 self.z_i_prev @ self.w_ie
                 if t > 0
-                else torch.zeros_like(ge_drive)
+                else zero_ge
             )
 
             v_th_eff = (
@@ -508,7 +513,8 @@ class CompetitiveNetwork:
                 )
 
             self.z_i_prev = z_i
-            z_e_hist[t] = z_e
+            if record_history:
+                z_e_hist[t] = z_e
             counts += z_e
 
         # --- rest: zero input, conductance meluruh, trace meluruh ---
@@ -576,6 +582,8 @@ class CompetitiveNetwork:
             )
 
         self.n_presentations += 1
+        if not record_history:
+            z_e_hist = torch.empty(0, device=self.device)
         return z_e_hist, counts
 
     def state_dict(self) -> dict:

@@ -174,7 +174,8 @@ def test_neurons_fire_at_different_times():
     enc = EncoderConfig()
     g = torch.Generator().manual_seed(7)
     z_e, _ = net.present_batch(
-        encode_poisson(images[:10], 2.0, enc, generator=g)
+        encode_poisson(images[:10], 2.0, enc, generator=g),
+        record_history=True,
     )
 
     # (n_steps, B, n_e) -> (n_steps, B*n_e): satu deret waktu

@@ -184,7 +184,7 @@ def run_config(
         z_pre = encode_poisson(
             images[idx], enc.start_intensity, enc, generator=gen
         )
-        z_e, counts = net.present_batch(z_pre)
+        z_e, counts = net.present_batch(z_pre, record_history=True)
 
         spike_total += float(counts.sum())
         n_done += idx.shape[0]

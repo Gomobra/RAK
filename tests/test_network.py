@@ -208,14 +208,14 @@ def test_theta_decays_toward_zero():
 # ================================================= spike statistics
 def test_spikes_are_binary():
     net = _net(n_e=10)
-    z_e, _ = net.present_batch(_spikes(steps=40, seed=5))
+    z_e, _ = net.present_batch(_spikes(steps=40, seed=5), record_history=True)
     assert set(z_e.unique().tolist()) <= {0.0, 1.0}
 
 
 def test_returns_expected_shapes():
     net = _net(n_e=10)
     steps = 50
-    z_e, counts = net.present_batch(_spikes(steps=steps, seed=6))
+    z_e, counts = net.present_batch(_spikes(steps=steps, seed=6), record_history=True)
     assert z_e.shape == (steps, 4, 10)
     assert counts.shape == (4, 10)
 
