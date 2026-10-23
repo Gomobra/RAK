@@ -50,7 +50,10 @@ on:
 jobs:
   ridge:
     runs-on: ubuntu-latest
-    timeout-minutes: 90
+    # Ensemble 5 model x 15k gambar x 5 trials bisa ~2.5 jam.
+    # Timeout 90 menit pernah membunuh job tepat di 1h30m dan
+    # menghasilkan artifact kosong.
+    timeout-minutes: 240
     permissions:
       contents: read
       actions: read
