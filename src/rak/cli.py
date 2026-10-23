@@ -551,6 +551,15 @@ def _cmd_viz_phase2(args: argparse.Namespace) -> int:
 
 
 def main(argv: list[str] | None = None) -> int:
+    argv = list(sys.argv[1:] if argv is None else argv)
+    # `readout` punya parser sendiri. Delegasi di depan supaya opsi
+    # seperti --weights (nargs="+") tidak bertabrakan dengan parser
+    # utama.
+    if argv and argv[0] == "readout":
+        from rak.readout.cli import main as readout_main
+
+        return readout_main(argv[1:])
+
     parser = argparse.ArgumentParser(
         prog="rak", description="RAK — pure spiking architecture"
     )

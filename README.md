@@ -4,7 +4,7 @@ Pure spiking architecture dengan local learning. Dibangun dari nol:
 tidak pakai pre-trained model, tidak pakai API LLM, tidak pakai
 backpropagation sebagai learning rule utama.
 
-Status: **Phase 1 — Neuron Models**
+Status: **Phase 3 — MNIST** (STDP tanpa label; readout linear terbaik 86.80% pada test 10k)
 
 ## Prinsip
 
@@ -37,6 +37,11 @@ rak info                        # versi + backend
 rak selfcheck                  # smoke test neuron + layer
 rak bench --n-in 784 --n-out 100 --steps 350
 
+# Readout: ubah spike count jadi kelas (label hanya untuk readout)
+rak readout --weights runs/a/weights.pt runs/b/weights.pt \
+    --train-samples 5000 --test-samples 10000 --trials 5 \
+    --save-readout runs/readout.pt
+
 pytest                          # test suite
 pytest -m "not slow"            # skip benchmark
 ```
@@ -51,6 +56,7 @@ src/rak/
   architecture/ sparse, modular, reservoir, recurrent, attention          (Phase 4)
   memory/       Hopfield, SDM, episodic buffer, immutable store           (Phase 5)
   inference/    event-driven, sparse activation, temporal coding         (Phase 7)
+  readout/      ridge linear + ensemble fitur spike count                  (Phase 3)
   tasks/        MNIST, Omniglot, associative memory                       (Phase 3+)
   eval/         seeds, benchmark, energy, explainability, ablation       (Phase 7)
 ```
@@ -70,6 +76,31 @@ src/rak/
 | 8 | Energy + publikasi | SynOps < 0.5× ANN FLOPs |
 
 Detail lengkap + rationale: [`PRD.md`](PRD.md)
+
+## Readout (bukan bagian learning)
+
+Jaringan dilatih tanpa label. Setelah training, spike count tiap
+gambar dipetakan ke kelas oleh `rak.readout.RidgeReadout`:
+
+```python
+from rak.readout import RidgeReadout, ensemble_counts
+
+x_train = ensemble_counts([net_a, net_b], train_images, trials=5)
+x_test = ensemble_counts([net_a, net_b], test_images, trials=5)
+
+readout = RidgeReadout().fit(x_train, train_labels)
+pred = readout.predict(x_test)
+```
+
+- Alpha dipilih di split validasi data **TRAIN**; test tidak dipakai
+  untuk memilih apa pun.
+- `trials=5` menjumlahkan 5 presentasi Poisson per gambar. Encoder
+  stokastik; ini mengurangi varians sampling, bukan mengubah bobot.
+- Ensemble = beberapa checkpoint, fitur spike count digabung menjadi
+  satu vektor. Bukan rata-rata prediksi.
+
+Hasil lengkap dan perbandingan jujur vs paper: lihat
+[`experiments/exp_003_mnist/results.md`](experiments/exp_003_mnist/results.md).
 
 ## Referensi kunci
 
