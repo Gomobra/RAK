@@ -94,7 +94,6 @@ jobs:
             --assign-samples ${{ github.event.inputs.assign || '5000' }} \
             --test-limit ${{ github.event.inputs.test || '0' }} \
             --trials ${{ github.event.inputs.trials || '1' }} \
-            ${{ github.event.inputs.smoke == 'false' && '--no-smoke' || '' }}
       - name: Upload weights
         if: always()
         uses: actions/upload-artifact@v4

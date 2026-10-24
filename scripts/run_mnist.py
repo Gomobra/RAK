@@ -35,7 +35,6 @@ def main():
     p.add_argument("--assign-samples", type=int, default=5000)
     p.add_argument("--test-limit", type=int, default=0)
     p.add_argument("--out-dir", default="runs/mnist")
-    p.add_argument("--no-smoke", action="store_true")
     args = p.parse_args()
 
     use_ref = not args.legacy_params
