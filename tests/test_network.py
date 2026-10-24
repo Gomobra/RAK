@@ -65,11 +65,14 @@ def test_e_to_i_is_one_to_one():
     diag = torch.diag(net.w_ei)
     off = net.w_ei - torch.diag(diag)
     assert torch.count_nonzero(off) == 0
-    assert torch.allclose(
-        diag, torch.full((16,), float(net.config.e_to_i_strength))
-    )
+    if net.config.use_reference_params:
+        assert torch.allclose(diag, torch.full((16,), 10.4))
+    else:
+        assert torch.allclose(
+            diag, torch.full((16,), float(net.config.e_to_i_strength))
+        )
 
-    scaled = _net(n_e=4, e_to_i_strength=5.0)
+    scaled = _net(n_e=4, use_reference_params=False, e_to_i_strength=5.0)
     assert torch.allclose(torch.diag(scaled.w_ei), torch.full((4,), 5.0))
 
 
@@ -87,14 +90,14 @@ def test_i_to_e_is_positive_and_sparse():
     Acuan memakai matriks acak (`random/AiAe.npy`), jadi test ini
     menguji dua hal: tidak ada bobot negatif, dan ada sparsitas.
     """
-    net = _net(n_e=16)
-    assert (net.w_ie >= 0).all(), "tidak boleh negatif -- lihat docstring"
-    frac_zero = float((net.w_ie == 0).double().mean())
+    net = _net(n_e=16)  # default reference: all-to-all, tidak ada nol
+    assert (net.w_ie >= 0).all()
+    assert float(net.exc.config.e_syn_i) < float(net.exc.config.v_rest)
+
+    net_leg = _net(n_e=16, use_reference_params=False, inhib_connectivity=0.5)
+    assert (net_leg.w_ie >= 0).all()
+    frac_zero = float((net_leg.w_ie == 0).double().mean())
     assert 0.2 < frac_zero < 0.8, f"bukan konektivitas acak: {frac_zero:.3f}"
-    assert float(net.exc.config.e_syn_i) < float(net.exc.config.v_rest), (
-        "potensial balik inhibitor harus di bawah v_rest supaya "
-        "memang menghambat"
-    )
 
 
 def test_inhibitory_population_is_ground():
@@ -234,7 +237,8 @@ def test_lateral_inhibition_creates_competition():
     # bukan "dengan vs tanpa inhibisi" tapi "sebelum vs sesudah
     # training". Itu bukan eksperimen yang gw maksud.
     with_inh = _net(n_e=16, seed=5)
-    without_inh = _net(n_e=16, seed=5, inhibition_strength=0.0)
+    without_inh = _net(n_e=16, seed=5, use_reference_params=False,
+                       inhibition_strength=0.0)
 
     sp = _spikes(steps=120, seed=7)
     _, counts_a = with_inh.present_batch(sp)
