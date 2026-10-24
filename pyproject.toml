@@ -4,8 +4,8 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "rak"
-version = "1.2.0"
-description = "RAK — pure spiking architecture with local learning, built from scratch"
+version = "0.1.0"
+description = "RAK — Recurrent Adaptive Knowledge: pure spiking architecture with local learning"
 readme = "README.md"
 requires-python = ">=3.10"
 license = { text = "MIT" }
@@ -13,25 +13,18 @@ license = { text = "MIT" }
 dependencies = [
     "torch>=2.0",
     "numpy>=1.24",
-    "scipy>=1.10",
     "matplotlib>=3.6",
-    "networkx>=3.0",
-    "tqdm>=4.65",
 ]
 
 [project.optional-dependencies]
 dev = ["pytest>=7.4", "pytest-timeout>=2.2"]
-tasks = ["torchvision>=0.15"]
-
-[project.scripts]
-rak = "rak.cli:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-addopts = "-q --strict-markers --timeout=900"
+addopts = "-q --strict-markers --timeout=300"
 markers = [
     "slow: test yang butuh > 10 detik",
 ]

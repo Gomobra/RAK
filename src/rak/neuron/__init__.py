@@ -1,32 +1,15 @@
-"""Subpackage: neuron models (Phase 1)."""
+"""Neuron models (Phase 1)."""
 
-from rak.neuron.trace import (
-    PoissonEncoder,
-    decay_to_target,
-    poisson_spike_train,
-    spike_trace,
-)
-from rak.neuron.lif import LIF, LIFConfig
-from rak.neuron.conductance import (
-    ConductanceConfig,
-    ConductanceLIF,
-    ConductanceState,
-)
-from rak.neuron.adaptive_lif import AdaptiveLIF
-from rak.neuron.izhikevich import Izhikevich
+from rak.neuron.adaptive_lif import AdaptiveLIF, AdaptiveLIFConfig
+from rak.neuron.izhikevich import IZHIKEVICH_MODES, Izhikevich, IzhikevichConfig
 from rak.neuron.layer import SpikeLayer
+from rak.neuron.lif import LIF, LIFConfig
+from rak.neuron.trace import make_trace, poisson_spike_train, trace_step
 
 __all__ = [
-    "ConductanceConfig",
-    "ConductanceState",
-    "ConductanceLIF",
-    "PoissonEncoder",
-    "decay_to_target",
-    "poisson_spike_train",
-    "spike_trace",
-    "LIF",
-    "LIFConfig",
-    "AdaptiveLIF",
-    "Izhikevich",
+    "LIF", "LIFConfig",
+    "AdaptiveLIF", "AdaptiveLIFConfig",
+    "Izhikevich", "IzhikevichConfig", "IZHIKEVICH_MODES",
     "SpikeLayer",
+    "poisson_spike_train", "make_trace", "trace_step",
 ]
