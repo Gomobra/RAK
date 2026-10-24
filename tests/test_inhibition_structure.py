@@ -42,7 +42,7 @@ def test_e_to_i_is_one_to_one() -> None:
 
 def test_i_to_e_reference_is_all_to_all_without_self() -> None:
     """Rezim reference: I->E all-to-all, i != j, bobot 17.0."""
-    net = _net(n_e=16)  # default reference
+    net = _net(n_e=16)  # default reference; strength diabaikan
     assert net.config.use_reference_params
     assert torch.count_nonzero(torch.diag(net.w_ie)) == 0
     off_diag = net.w_ie[~torch.eye(16, dtype=torch.bool)]
