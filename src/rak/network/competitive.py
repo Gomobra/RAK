@@ -296,3 +296,20 @@ class CompetitiveNetwork:
             D = int(self.delay_steps.max().item()) if self.delay_steps.numel() else 0
             self._delay_D = D
         self.n_presentations = state.get("n_presentations", 0)
+
+def assign_classes(spike_counts, labels, n_classes=10):
+    """Assign each neuron to the class it fires most for."""
+    n_e = spike_counts.shape[1]
+    assignments = torch.zeros(n_e, dtype=torch.long)
+    for j in range(n_e):
+        best_class = 0
+        best_rate = -1.0
+        for c in range(n_classes):
+            mask = labels == c
+            if mask.sum() > 0:
+                rate = spike_counts[mask, j].mean().item()
+                if rate > best_rate:
+                    best_rate = rate
+                    best_class = c
+        assignments[j] = best_class
+    return assignments
