@@ -80,8 +80,8 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--trials", type=int, default=5)
     ap.add_argument("--batch", type=int, default=64)
     ap.add_argument("--seed", type=int, default=0)
-    ap.add_argument("--inhibition", type=float, default=1600.0)
-    ap.add_argument("--e-to-i", type=float, default=1600.0)
+    ap.add_argument("--inhibition", type=float, default=17.0)
+    ap.add_argument("--e-to-i", type=float, default=10.4)
     ap.add_argument("--rest-ms", type=float, default=0.0,
                    help="jeda zero-input setelah presentasi (ms)")
     ap.add_argument("--legacy-params", action="store_true",

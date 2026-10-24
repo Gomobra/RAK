@@ -459,12 +459,12 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--trials", type=int, default=1,
                    help="jumlah presentasi per gambar test (rata-rata "
                         "mengurangi noise encoder Poisson)")
-    p.add_argument("--theta-plus", type=float, default=0.0125)
-    p.add_argument("--theta-max", type=float, default=40.0)
+    p.add_argument("--theta-plus", type=float, default=0.05)
+    p.add_argument("--theta-max", type=float, default=200.0)
     p.add_argument("--e-to-i", type=float, default=1600.0)
-    p.add_argument("--delay-max", type=float, default=0.0,
+    p.add_argument("--delay-max", type=float, default=10.0,
                    help="delay input->E maksimum (ms), acuan 10")
-    p.add_argument("--rest-ms", type=float, default=0.0,
+    p.add_argument("--rest-ms", type=float, default=150.0,
                    help="jeda zero-input setelah presentasi (ms), acuan 150")
     p.add_argument("--legacy-params", action="store_true",
                    help="pakai parameter lama (sparse inhibisi, init lama)")

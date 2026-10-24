@@ -78,7 +78,7 @@ class TrainConfig:
     #: Homeostasis: kenaikan theta per spike, dan batas atasnya.
     #: `theta_eq = theta_plus * laju * tau_theta`, jadi `theta_plus`
     #: menentukan laju fire kesetimbangan. Acuan 0.05.
-    theta_plus: float = 0.0125
+    theta_plus: float = 0.05
     theta_max: float = 40.0
 
     #: Bobot E->I (satu-satu). Terpisah dari `inhibition_strength`.

@@ -114,7 +114,7 @@ class NetworkConfig:
 
     #: Bobot inhibisi lateral. `w_ie` selalu negatif: besarannya yang
     #: menentukan seberapa kuat inhibisi, arahnya sudah pasti.
-    inhibition_strength: float = 1.0
+    inhibition_strength: float = 17.0
 
     #: Batas atas theta. `theta` tumbuh tiap spike dan meluruh dengan
     #: tau 1e7 ms, jadi equilibrium-nya `theta_plus * laju * tau`.
@@ -140,7 +140,7 @@ class NetworkConfig:
     #: Sekarang dipisah. 1600 adalah nilai lama supaya run yang sudah
     #: ada tetap bisa direproduksi; nilai ini akan dikalibrasi lewat
     #: sweep.
-    e_to_i_strength: float = 1600.0
+    e_to_i_strength: float = 10.4
 
     #: Probabilitas koneksi I -> E. Acuan memakai matriks ACAK
     #: (`random/AiAe.npy`), bukan all-to-all seragam.
@@ -289,13 +289,13 @@ class CompetitiveNetwork:
             # Acuan: E->I one-to-one weight 10.4.
             self.w_ei = (
                 torch.eye(cfg.n_e, cfg.n_inhibitory, device=self.device)
-                * 10.4
+                * cfg.e_to_i_strength
             )
-            # Acuan: I->E all-to-all (i != j) weight 17.0. TIDAK
-            # dinormalisasi per kolom -- setiap neuron E menerima
-            # inhibisi identik dari semua inhibitor kecuali dirinya.
-            # Simetri dipecah oleh noise weight init + STDP + delay.
-            self.w_ie = 17.0 * (
+            # Acuan: I->E all-to-all (i != j). Bobot per sinaps =
+            # `inhibition_strength` (acuan 17.0). TIDAK dinormalisasi
+            # per kolom. Simetri dipecah oleh noise weight init + STDP
+            # + delay. Total per neuron E = strength * (n_e - 1).
+            self.w_ie = cfg.inhibition_strength * (
                 torch.ones(cfg.n_inhibitory, cfg.n_e, device=self.device)
                 - torch.eye(cfg.n_inhibitory, cfg.n_e, device=self.device)
             )
@@ -515,7 +515,15 @@ class CompetitiveNetwork:
                 idx = (t - self.delay_steps) % L  # (n_e,)
                 zp_d = buf_zp[idx].permute(1, 0, 2)  # (B, n_e, n_in)
                 pre_d_delayed = buf_pre[idx].permute(1, 0, 2)  # (B, n_e, n_in)
-                ge_drive = torch.einsum("bni,ni->bn", zp_d, self.w_e)
+                zp_d = buf_zp[idx].permute(1, 0, 2)  # (B, n_e, n_in)
+                pre_d_delayed = buf_pre[idx].permute(1, 0, 2)  # (B, n_e, n_in)
+                # Per-delay-group dense matmul: neuron dengan delay yang
+                # sama berbagi input zp[t-d]. BLAS lebih efisien
+                # daripada einsum pada tensor 3D.
+                ge_drive = torch.zeros(batch, cfg.n_e, device=self.device, dtype=z_pre.dtype)
+                for d, nidx in self._delay_groups:
+                    zp_dd = buf_zp[(t - d) % L]  # (B, n_in)
+                    ge_drive[:, nidx] = zp_dd @ self.w_e[:, nidx]
             else:
                 zp_d = None
                 pre_d_delayed = None
@@ -576,17 +584,13 @@ class CompetitiveNetwork:
             t = n_steps + r
             zp = torch.zeros(batch, cfg.n_in, device=self.device, dtype=z_pre.dtype)
             if D > 0:
-                buf[t % L] = zp
                 pre_d_cur = gamma_pre * pre_trace
                 buf_pre[t % L] = pre_d_cur
-                idx = (t - self.delay_steps) % L
-                zp_d = buf_zp[idx].permute(1, 0, 2)
-                pre_d_delayed = buf_pre[idx].permute(1, 0, 2)
-                ge_drive = torch.einsum("bni,ni->bn", zp_d, self.w_e)
+                ge_drive = zero_ge
             else:
                 zp_d = None
                 pre_d_delayed = None
-                ge_drive = zp @ self.w_e
+                ge_drive = zero_ge
 
             gi_drive = self.z_i_prev @ self.w_ie
             v_th_eff = (

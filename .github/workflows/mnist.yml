@@ -22,7 +22,7 @@ on:
       inhibition:
         description: "Total konduktansi inhibitor per neuron eksitasi"
         required: false
-        default: "800"
+        default: "17"
       rule:
         description: "Rule STDP (eq3 atau variant3)"
         required: false
@@ -50,23 +50,23 @@ on:
       theta_plus:
         description: "theta_plus (acuan 0.05; 0.0125 mengunci laju 4x lebih tinggi)"
         required: false
-        default: "0.0125"
+        default: "0.05"
       theta_max:
         description: "Batas atas theta (mV)"
         required: false
-        default: "40"
+        default: "200"
       e_to_i:
         description: "Bobot E->I (satu-satu)"
         required: false
-        default: "1600"
+        default: "10.4"
       delay_max:
         description: "Delay input->E maksimum (ms), acuan 10"
         required: false
-        default: "0"
+        default: "10"
       rest_ms:
         description: "Jeda zero-input setelah presentasi (ms), acuan 150"
         required: false
-        default: "0"
+        default: "150"
       legacy_params:
         description: "Pakai parameter lama (sparse inhibisi, init lama)"
         required: false
