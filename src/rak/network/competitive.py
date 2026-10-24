@@ -291,11 +291,10 @@ class CompetitiveNetwork:
                 torch.eye(cfg.n_e, cfg.n_inhibitory, device=self.device)
                 * cfg.e_to_i_strength
             )
-            # Acuan: I->E all-to-all (i != j), bobot per sinaps 17.0.
-            # `inhibition_strength` diabaikan di rezim ini (tetap 17.0)
-            # supaya perilaku referensi tidak bergantung pada nilai yang
-            # dilewatkan. Untuk tuning, pakai --legacy-params.
-            self.w_ie = 17.0 * (
+            # Acuan: I->E all-to-all (i != j). Bobot per sinaps =
+            # `inhibition_strength` (acuan 17.0). Tunable lewat flag
+            # --inhibition. Total per neuron E = strength * (n_e - 1).
+            self.w_ie = cfg.inhibition_strength * (
                 torch.ones(cfg.n_inhibitory, cfg.n_e, device=self.device)
                 - torch.eye(cfg.n_inhibitory, cfg.n_e, device=self.device)
             )

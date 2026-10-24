@@ -46,7 +46,9 @@ def test_i_to_e_reference_is_all_to_all_without_self() -> None:
     assert net.config.use_reference_params
     assert torch.count_nonzero(torch.diag(net.w_ie)) == 0
     off_diag = net.w_ie[~torch.eye(16, dtype=torch.bool)]
-    assert torch.allclose(off_diag, torch.full_like(off_diag, 17.0))
+    assert torch.allclose(
+        off_diag, torch.full_like(off_diag, float(net.config.inhibition_strength))
+    )
 
 
 def test_i_to_e_legacy_columns_sum_to_strength() -> None:
