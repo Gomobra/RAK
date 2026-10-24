@@ -44,6 +44,11 @@ def _cmd_selfcheck(_args):
 
 
 def main(argv=None):
+    argv = list(__import__("sys").argv[1:] if argv is None else argv)
+    if argv and argv[0] == "readout":
+        from rak.readout.cli import main as readout_main
+        return readout_main(argv[1:])
+
     parser = argparse.ArgumentParser(prog="rak")
     parser.add_argument("--version", action="version", version=f"RAK {__version__}")
     sub = parser.add_subparsers(dest="cmd")

@@ -1,0 +1,72 @@
+name: Ridge readout
+
+on:
+  workflow_dispatch:
+    inputs:
+      run_id:
+        description: "Run ID yang artifact-nya berisi weights.pt"
+        required: true
+      train_samples:
+        description: "Jumlah gambar TRAIN"
+        required: false
+        default: "5000"
+      test_samples:
+        description: "Jumlah gambar TEST"
+        required: false
+        default: "10000"
+      trials:
+        description: "Presentasi Poisson per gambar"
+        required: false
+        default: "5"
+      inhibition:
+        description: "inhibition_strength saat training"
+        required: false
+        default: "17"
+      e_to_i:
+        description: "e_to_i_strength saat training"
+        required: false
+        default: "10.4"
+      rest_ms:
+        description: "rest_ms saat training"
+        required: false
+        default: "0"
+
+jobs:
+  ridge:
+    runs-on: ubuntu-latest
+    timeout-minutes: 240
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install
+        run: pip install -e ".[tasks]" --quiet
+      - name: Ambil bobot
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh run download ${{ github.event.inputs.run_id }} -D runs/ridge
+          find runs/ridge -name weights.pt -not -path "*smoke*"
+      - name: Fit readout
+        run: |
+          set -o pipefail
+          W=$(find runs/ridge -name weights.pt -not -path "*smoke*" | head -1)
+          python -m rak readout \
+            --weights "$W" \
+            --train-samples ${{ github.event.inputs.train_samples }} \
+            --test-samples ${{ github.event.inputs.test_samples }} \
+            --trials ${{ github.event.inputs.trials }} \
+            --inhibition ${{ github.event.inputs.inhibition }} \
+            --e-to-i ${{ github.event.inputs.e_to_i }} \
+            --rest-ms ${{ github.event.inputs.rest_ms }} \
+            --out runs/ridge/ridge.json | tee runs/ridge/ridge.txt
+      - name: Ringkasan
+        if: always()
+        run: cat runs/ridge/ridge.txt >> "$GITHUB_STEP_SUMMARY" || true
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: rak-ridge-${{ github.run_number }}
+          path: runs/ridge/
+          retention-days: 30
