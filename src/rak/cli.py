@@ -9,14 +9,35 @@ import torch
 
 from rak import __version__
 
+try:
+    from rich.console import Console
+    from rich.table import Table
+    from rich.panel import Panel
+    _console = Console()
+    _HAS_RICH = True
+except ImportError:
+    _console = None
+    _HAS_RICH = False
+
 
 def _cmd_info(_args):
-    print(f"RAK {__version__} — Recurrent Adaptive Knowledge")
-    print(f"python  {sys.version.split()[0]}")
-    print(f"torch   {torch.__version__}")
-    print(f"cuda    {torch.cuda.is_available()}")
-    if torch.cuda.is_available():
-        print(f"gpu     {torch.cuda.get_device_name(0)}")
+    if _HAS_RICH:
+        t = Table(title=f"RAK {__version__} — Recurrent Adaptive Knowledge")
+        t.add_column("Key", style="cyan")
+        t.add_column("Value", style="green")
+        t.add_row("python", sys.version.split()[0])
+        t.add_row("torch", torch.__version__)
+        t.add_row("cuda", str(torch.cuda.is_available()))
+        if torch.cuda.is_available():
+            t.add_row("gpu", torch.cuda.get_device_name(0))
+        _console.print(t)
+    else:
+        print(f"RAK {__version__} — Recurrent Adaptive Knowledge")
+        print(f"python  {sys.version.split()[0]}")
+        print(f"torch   {torch.__version__}")
+        print(f"cuda    {torch.cuda.is_available()}")
+        if torch.cuda.is_available():
+            print(f"gpu     {torch.cuda.get_device_name(0)}")
     return 0
 
 
@@ -41,7 +62,11 @@ def _cmd_selfcheck(_args):
     y, v = layer.forward(x, None)
     assert y.shape == (20, 4, 8)
 
-    print(f"ok: lif={rate:.1f}Hz alif={rate_a:.1f}Hz izh={int(sp.sum())} layer={tuple(y.shape)}")
+    msg = f"ok: lif={rate:.1f}Hz alif={rate_a:.1f}Hz izh={int(sp.sum())} layer={tuple(y.shape)}"
+    if _HAS_RICH:
+        _console.print(f"[green]{msg}[/green]")
+    else:
+        print(msg)
     return 0
 
 

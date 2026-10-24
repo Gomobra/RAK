@@ -20,6 +20,7 @@ dependencies = [
 dev = ["pytest>=7.4", "pytest-timeout>=2.2"]
 tasks = ["torchvision>=0.15"]
 serve = ["fastapi>=0.100", "uvicorn>=0.20", "python-multipart>=0.0.5", "Pillow>=9.0"]
+cli = ["rich>=13.0"]
 
 [tool.setuptools.packages.find]
 where = ["src"]
