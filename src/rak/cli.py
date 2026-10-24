@@ -1,4 +1,4 @@
-"""CLI entry point — Phase 1."""
+"""CLI entry point — RAK (Recurrent Adaptive Knowledge)."""
 
 from __future__ import annotations
 
@@ -11,10 +11,12 @@ from rak import __version__
 
 
 def _cmd_info(_args):
-    print(f"RAK {__version__}")
+    print(f"RAK {__version__} — Recurrent Adaptive Knowledge")
     print(f"python  {sys.version.split()[0]}")
     print(f"torch   {torch.__version__}")
     print(f"cuda    {torch.cuda.is_available()}")
+    if torch.cuda.is_available():
+        print(f"gpu     {torch.cuda.get_device_name(0)}")
     return 0
 
 
@@ -43,105 +45,246 @@ def _cmd_selfcheck(_args):
     return 0
 
 
-def main(argv=None):
-    argv = list(sys.argv[1:] if argv is None else argv)
-    if argv and argv[0] == "readout":
-        from rak.readout.cli import main as readout_main
-        return readout_main(argv[1:])
-    if argv and argv[0] == "serve":
-        try:
-            import uvicorn
-            from rak.serve import app
-        except ImportError:
-            print("pip install fastapi uvicorn python-multipart Pillow")
-            return 1
-        host, port = "0.0.0.0", 8000
-        weights_path, readout_path = None, None
-        i = 1
-        while i < len(argv):
-            if argv[i] == "--port":
-                port = int(argv[i + 1]); i += 2; continue
-            if argv[i] == "--weights":
-                weights_path = argv[i + 1]; i += 2; continue
-            if argv[i] == "--readout":
-                readout_path = argv[i + 1]; i += 2; continue
-            i += 1
-        if weights_path:
-            app.state.weights_path = weights_path
-            app.state.readout_path = readout_path
-        uvicorn.run(app, host=host, port=port)
-        return 0
-    if argv and argv[0] == "generate":
-        import torch
-        from rak.network.competitive import CompetitiveNetwork, NetworkConfig
-        ap = argparse.ArgumentParser(prog="rak generate")
-        ap.add_argument("--weights", required=True)
-        ap.add_argument("--out", default="generated.png")
-        ap.add_argument("--n", type=int, default=10)
-        ap.add_argument("--class-idx", type=int, default=None)
-        gargs = ap.parse_args(argv[1:])
-        blob = torch.load(gargs.weights, map_location="cpu", weights_only=False)
-        state = blob["net"]
-        n_e = int(state["w_e"].shape[1])
-        net = CompetitiveNetwork(NetworkConfig(n_e=n_e), seed=1)
-        net.load_state_dict(state)
-        if gargs.class_idx is not None:
-            img = net.generate_class(blob.get("assignments", []), gargs.class_idx)
-            import matplotlib
-            matplotlib.use("Agg")
-            import matplotlib.pyplot as plt
-            plt.imshow(img.numpy(), cmap="hot_r")
-            plt.axis("off")
-            plt.savefig(gargs.out, dpi=120)
-            print(f"tersimpan: {gargs.out}")
-        else:
-            imgs = net.generate_samples(n=gargs.n)
-            import matplotlib
-            matplotlib.use("Agg")
-            import matplotlib.pyplot as plt
-            import numpy as np
-            ncols = min(gargs.n, 5)
-            nrows = (gargs.n + ncols - 1) // ncols
-            fig, axes = plt.subplots(nrows, ncols, figsize=(ncols * 2, nrows * 2))
-            axes = np.array(axes).reshape(-1)
-            for i in range(gargs.n):
-                axes[i].imshow(imgs[i].numpy(), cmap="hot_r")
-                axes[i].axis("off")
-            for i in range(gargs.n, len(axes)):
-                axes[i].axis("off")
-            fig.savefig(gargs.out, dpi=120)
-            print(f"tersimpan: {gargs.out}")
-        return 0
-    if argv and argv[0] == "serve":
+def _cmd_train(args):
+    """Train SNN on MNIST."""
+    import subprocess
+    cmd = ["python", "scripts/run_mnist.py",
+           "--neurons", str(args.neurons),
+           "--epochs", str(args.epochs),
+           "--seed", str(args.seed),
+           "--inhibition", str(args.inhibition),
+           "--theta-plus", str(args.theta_plus),
+           "--theta-max", str(args.theta_max),
+           "--delay-max", str(args.delay_max),
+           "--rest-ms", str(args.rest_ms),
+           "--assign-samples", str(args.assign),
+           "--test-limit", str(args.test),
+           "--trials", str(args.trials),
+           "--out-dir", args.out_dir]
+    if args.legacy_params:
+        cmd.append("--legacy-params")
+    if args.device:
+        cmd += ["--device", args.device]
+    if args.no_smoke:
+        cmd.append("--no-smoke")
+    print(" ".join(cmd))
+    return subprocess.call(cmd)
+
+
+def _cmd_eval(args):
+    """Evaluate a checkpoint."""
+    import subprocess
+    cmd = ["python", "scripts/run_mnist.py",
+           "--neurons", str(args.neurons),
+           "--epochs", "1",
+           "--seed", str(args.seed),
+           "--inhibition", str(args.inhibition),
+           "--theta-plus", str(args.theta_plus),
+           "--theta-max", str(args.theta_max),
+           "--delay-max", str(args.delay_max),
+           "--rest-ms", str(args.rest_ms),
+           "--assign-samples", str(args.assign),
+           "--test-limit", str(args.test),
+           "--trials", str(args.trials),
+           "--out-dir", args.out_dir,
+           "--resume", args.weights,
+           "--reassign"]
+    if args.legacy_params:
+        cmd.append("--legacy-params")
+    if args.device:
+        cmd += ["--device", args.device]
+    cmd.append("--no-smoke")
+    print(" ".join(cmd))
+    return subprocess.call(cmd)
+
+
+def _cmd_generate(args):
+    """Generate images from a checkpoint."""
+    import torch
+    from rak.generate import generate_samples, generate_class
+
+    blob = torch.load(args.weights, map_location="cpu", weights_only=False)
+    state = blob["net"]
+    w = state["w_e"]
+    assignments = blob.get("assignments", [])
+
+    if args.class_idx is not None:
+        img = generate_class(w, assignments, args.class_idx, seed=args.seed)
+        import matplotlib
+        matplotlib.use("Agg")
+        import matplotlib.pyplot as plt
+        plt.imshow(img.numpy(), cmap="hot_r")
+        plt.axis("off")
+        plt.title(f"Generated: class {args.class_idx}")
+        plt.savefig(args.out, dpi=120)
+        print(f"tersimpan: {args.out}")
+    else:
+        imgs = generate_samples(w, n=args.n, seed=args.seed)
+        import matplotlib
+        matplotlib.use("Agg")
+        import matplotlib.pyplot as plt
+        import numpy as np
+        ncols = min(args.n, 5)
+        nrows = (args.n + ncols - 1) // ncols
+        fig, axes = plt.subplots(nrows, ncols, figsize=(ncols * 2, nrows * 2))
+        axes = np.array(axes).reshape(-1)
+        for i in range(args.n):
+            axes[i].imshow(imgs[i].numpy(), cmap="hot_r")
+            axes[i].set_title(f"img {i}", fontsize=8)
+            axes[i].axis("off")
+        for i in range(args.n, len(axes)):
+            axes[i].axis("off")
+        fig.savefig(args.out, dpi=120)
+        print(f"tersimpan: {args.out}")
+    return 0
+
+
+def _cmd_serve(args):
+    """Start FastAPI serving."""
+    try:
         import uvicorn
         from rak.serve import app
-        host = "0.0.0.0"
-        port = 8000
-        weights_path = None
-        readout_path = None
-        for i, a in enumerate(argv[1:]):
-            if a == "--port" and i + 2 <= len(argv):
-                port = int(argv[i + 2])
-            if a == "--weights" and i + 2 <= len(argv):
-                weights_path = argv[i + 2]
-            if a == "--readout" and i + 2 <= len(argv):
-                readout_path = argv[i + 2]
-        if weights_path:
-            app.state.weights_path = weights_path
-            app.state.readout_path = readout_path
-        uvicorn.run(app, host=host, port=port)
-        return 0
+    except ImportError:
+        print("pip install fastapi uvicorn python-multipart Pillow")
+        return 1
+    app.state.weights_path = args.weights
+    app.state.readout_path = args.readout
+    uvicorn.run(app, host=args.host, port=args.port)
+    return 0
 
-    parser = argparse.ArgumentParser(prog="rak")
+
+def _cmd_readout(args):
+    """Fit ridge readout (delegated)."""
+    from rak.readout.cli import main as readout_main
+    argv = []
+    if args.weights:
+        argv += ["--weights"] + args.weights
+    if args.train_samples:
+        argv += ["--train-samples", str(args.train_samples)]
+    if args.test_samples:
+        argv += ["--test-samples", str(args.test_samples)]
+    if args.trials:
+        argv += ["--trials", str(args.trials)]
+    if args.out:
+        argv += ["--out", args.out]
+    if args.save_readout:
+        argv += ["--save-readout", args.save_readout]
+    return readout_main(argv)
+
+
+def main(argv=None):
+    argv = list(sys.argv[1:] if argv is None else argv)
+    if argv and argv[0] in ("readout", "serve", "generate"):
+        # Delegate to sub-handlers
+        cmd = argv[0]
+        rest = argv[1:]
+        if cmd == "readout":
+            return _cmd_readout(_parse_readout(rest))
+        if cmd == "serve":
+            return _cmd_serve(_parse_serve(rest))
+        if cmd == "generate":
+            return _cmd_generate(_parse_generate(rest))
+
+    parser = argparse.ArgumentParser(prog="rak", description="RAK — Recurrent Adaptive Knowledge")
     parser.add_argument("--version", action="version", version=f"RAK {__version__}")
     sub = parser.add_subparsers(dest="cmd")
-    sub.add_parser("info").set_defaults(fn=_cmd_info)
-    sub.add_parser("selfcheck").set_defaults(fn=_cmd_selfcheck)
+
+    sub.add_parser("info", help="versi + backend").set_defaults(fn=_cmd_info)
+    sub.add_parser("selfcheck", help="smoke test").set_defaults(fn=_cmd_selfcheck)
+
+    tr = sub.add_parser("train", help="train SNN on MNIST")
+    tr.add_argument("--neurons", type=int, default=400)
+    tr.add_argument("--epochs", type=int, default=3)
+    tr.add_argument("--seed", type=int, default=1)
+    tr.add_argument("--inhibition", type=float, default=17.0)
+    tr.add_argument("--theta-plus", type=float, default=0.05)
+    tr.add_argument("--theta-max", type=float, default=200.0)
+    tr.add_argument("--delay-max", type=float, default=0.0)
+    tr.add_argument("--rest-ms", type=float, default=0.0)
+    tr.add_argument("--legacy-params", action="store_true")
+    tr.add_argument("--assign", type=int, default=5000)
+    tr.add_argument("--test", type=int, default=0)
+    tr.add_argument("--trials", type=int, default=1)
+    tr.add_argument("--out-dir", default="runs/mnist")
+    tr.add_argument("--device", default=None)
+    tr.add_argument("--no-smoke", action="store_true")
+    tr.set_defaults(fn=_cmd_train)
+
+    ev = sub.add_parser("eval", help="evaluate checkpoint")
+    ev.add_argument("--weights", required=True)
+    ev.add_argument("--neurons", type=int, default=400)
+    ev.add_argument("--seed", type=int, default=1)
+    ev.add_argument("--inhibition", type=float, default=17.0)
+    ev.add_argument("--theta-plus", type=float, default=0.05)
+    ev.add_argument("--theta-max", type=float, default=200.0)
+    ev.add_argument("--delay-max", type=float, default=0.0)
+    ev.add_argument("--rest-ms", type=float, default=0.0)
+    ev.add_argument("--legacy-params", action="store_true")
+    ev.add_argument("--assign", type=int, default=5000)
+    ev.add_argument("--test", type=int, default=0)
+    ev.add_argument("--trials", type=int, default=5)
+    ev.add_argument("--out-dir", default="runs/mnist")
+    ev.add_argument("--device", default=None)
+    ev.set_defaults(fn=_cmd_eval)
+
+    sv = sub.add_parser("serve", help="start FastAPI server")
+    sv.add_argument("--weights", required=True)
+    sv.add_argument("--readout", default=None)
+    sv.add_argument("--host", default="0.0.0.0")
+    sv.add_argument("--port", type=int, default=8000)
+    sv.set_defaults(fn=_cmd_serve)
+
+    gn = sub.add_parser("generate", help="generate images from checkpoint")
+    gn.add_argument("--weights", required=True)
+    gn.add_argument("--out", default="generated.png")
+    gn.add_argument("--n", type=int, default=10)
+    gn.add_argument("--class-idx", type=int, default=None)
+    gn.add_argument("--seed", type=int, default=0)
+    gn.set_defaults(fn=_cmd_generate)
+
+    rd = sub.add_parser("readout", help="fit ridge readout")
+    rd.add_argument("--weights", nargs="+", required=True)
+    rd.add_argument("--train-samples", type=int, default=5000)
+    rd.add_argument("--test-samples", type=int, default=10000)
+    rd.add_argument("--trials", type=int, default=5)
+    rd.add_argument("--out", default="")
+    rd.add_argument("--save-readout", default="")
+    rd.set_defaults(fn=_cmd_readout)
+
     args = parser.parse_args(argv)
     if not getattr(args, "fn", None):
         args.fn = _cmd_info
     return args.fn(args)
 
 
-if __name__ == "__main__":
-    raise SystemExit(main())
+def _parse_readout(argv):
+    import argparse
+    p = argparse.ArgumentParser()
+    p.add_argument("--weights", nargs="+", required=True)
+    p.add_argument("--train-samples", type=int, default=5000)
+    p.add_argument("--test-samples", type=int, default=10000)
+    p.add_argument("--trials", type=int, default=5)
+    p.add_argument("--out", default="")
+    p.add_argument("--save-readout", default="")
+    return p.parse_args(argv)
+
+
+def _parse_serve(argv):
+    import argparse
+    p = argparse.ArgumentParser()
+    p.add_argument("--weights", required=True)
+    p.add_argument("--readout", default=None)
+    p.add_argument("--host", default="0.0.0.0")
+    p.add_argument("--port", type=int, default=8000)
+    return p.parse_args(argv)
+
+
+def _parse_generate(argv):
+    import argparse
+    p = argparse.ArgumentParser()
+    p.add_argument("--weights", required=True)
+    p.add_argument("--out", default="generated.png")
+    p.add_argument("--n", type=int, default=10)
+    p.add_argument("--class-idx", type=int, default=None)
+    p.add_argument("--seed", type=int, default=0)
+    return p.parse_args(argv)
