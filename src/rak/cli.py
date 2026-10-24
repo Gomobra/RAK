@@ -44,10 +44,93 @@ def _cmd_selfcheck(_args):
 
 
 def main(argv=None):
-    argv = list(__import__("sys").argv[1:] if argv is None else argv)
+    argv = list(sys.argv[1:] if argv is None else argv)
     if argv and argv[0] == "readout":
         from rak.readout.cli import main as readout_main
         return readout_main(argv[1:])
+    if argv and argv[0] == "serve":
+        try:
+            import uvicorn
+            from rak.serve import app
+        except ImportError:
+            print("pip install fastapi uvicorn python-multipart Pillow")
+            return 1
+        host, port = "0.0.0.0", 8000
+        weights_path, readout_path = None, None
+        i = 1
+        while i < len(argv):
+            if argv[i] == "--port":
+                port = int(argv[i + 1]); i += 2; continue
+            if argv[i] == "--weights":
+                weights_path = argv[i + 1]; i += 2; continue
+            if argv[i] == "--readout":
+                readout_path = argv[i + 1]; i += 2; continue
+            i += 1
+        if weights_path:
+            app.state.weights_path = weights_path
+            app.state.readout_path = readout_path
+        uvicorn.run(app, host=host, port=port)
+        return 0
+    if argv and argv[0] == "generate":
+        import torch
+        from rak.network.competitive import CompetitiveNetwork, NetworkConfig
+        ap = argparse.ArgumentParser(prog="rak generate")
+        ap.add_argument("--weights", required=True)
+        ap.add_argument("--out", default="generated.png")
+        ap.add_argument("--n", type=int, default=10)
+        ap.add_argument("--class-idx", type=int, default=None)
+        gargs = ap.parse_args(argv[1:])
+        blob = torch.load(gargs.weights, map_location="cpu", weights_only=False)
+        state = blob["net"]
+        n_e = int(state["w_e"].shape[1])
+        net = CompetitiveNetwork(NetworkConfig(n_e=n_e), seed=1)
+        net.load_state_dict(state)
+        if gargs.class_idx is not None:
+            img = net.generate_class(blob.get("assignments", []), gargs.class_idx)
+            import matplotlib
+            matplotlib.use("Agg")
+            import matplotlib.pyplot as plt
+            plt.imshow(img.numpy(), cmap="hot_r")
+            plt.axis("off")
+            plt.savefig(gargs.out, dpi=120)
+            print(f"tersimpan: {gargs.out}")
+        else:
+            imgs = net.generate_samples(n=gargs.n)
+            import matplotlib
+            matplotlib.use("Agg")
+            import matplotlib.pyplot as plt
+            import numpy as np
+            ncols = min(gargs.n, 5)
+            nrows = (gargs.n + ncols - 1) // ncols
+            fig, axes = plt.subplots(nrows, ncols, figsize=(ncols * 2, nrows * 2))
+            axes = np.array(axes).reshape(-1)
+            for i in range(gargs.n):
+                axes[i].imshow(imgs[i].numpy(), cmap="hot_r")
+                axes[i].axis("off")
+            for i in range(gargs.n, len(axes)):
+                axes[i].axis("off")
+            fig.savefig(gargs.out, dpi=120)
+            print(f"tersimpan: {gargs.out}")
+        return 0
+    if argv and argv[0] == "serve":
+        import uvicorn
+        from rak.serve import app
+        host = "0.0.0.0"
+        port = 8000
+        weights_path = None
+        readout_path = None
+        for i, a in enumerate(argv[1:]):
+            if a == "--port" and i + 2 <= len(argv):
+                port = int(argv[i + 2])
+            if a == "--weights" and i + 2 <= len(argv):
+                weights_path = argv[i + 2]
+            if a == "--readout" and i + 2 <= len(argv):
+                readout_path = argv[i + 2]
+        if weights_path:
+            app.state.weights_path = weights_path
+            app.state.readout_path = readout_path
+        uvicorn.run(app, host=host, port=port)
+        return 0
 
     parser = argparse.ArgumentParser(prog="rak")
     parser.add_argument("--version", action="version", version=f"RAK {__version__}")

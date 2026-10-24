@@ -46,6 +46,7 @@ class CompetitiveNetwork:
     def __init__(self, config: NetworkConfig | None = None, seed: int = 0):
         self.config = config or NetworkConfig()
         cfg = self.config
+        self.device = torch.device("cpu")
         self.generator = torch.Generator().manual_seed(seed)
 
         # Excitatory neuron (tau_mem=100ms)
@@ -73,8 +74,8 @@ class CompetitiveNetwork:
 
         # Weights
         if cfg.use_reference_params:
-            self.w_e = (torch.rand(cfg.n_in, cfg.n_e, generator=self.generator) + 0.01) * 0.3
-            self.w_ei = torch.eye(cfg.n_e, cfg.n_inhibitory) * cfg.e_to_i_strength
+            self.w_e = ((torch.rand(cfg.n_in, cfg.n_e, generator=self.generator) + 0.01) * 0.3).to(self.device)
+            self.w_ei = (torch.eye(cfg.n_e, cfg.n_inhibitory) * cfg.e_to_i_strength).to(self.device)
             mask = (torch.rand(cfg.n_inhibitory, cfg.n_e, generator=self.generator) < 0.9).to(torch.float32)
             empty = mask.sum(dim=0) == 0
             if bool(empty.any()):
@@ -87,7 +88,7 @@ class CompetitiveNetwork:
             if bool(empty_xi.any()):
                 idx = torch.nonzero(empty_xi).flatten()
                 mask_xi[idx, idx % cfg.n_inhibitory] = 1.0
-            self.w_xi = mask_xi * cfg.x_to_i_weight
+            self.w_xi = (mask_xi * cfg.x_to_i_weight).to(self.device)
         else:
             scale = cfg.column_sum / cfg.n_in
             self.w_e = torch.rand(cfg.n_in, cfg.n_e, generator=self.generator) * scale + 0.5 * scale
@@ -104,13 +105,13 @@ class CompetitiveNetwork:
             if bool(empty_xi.any()):
                 idx = torch.nonzero(empty_xi).flatten()
                 mask_xi[idx, idx % cfg.n_inhibitory] = 1.0
-            self.w_xi = mask_xi * cfg.x_to_i_weight
+            self.w_xi = (mask_xi * cfg.x_to_i_weight).to(self.device)
 
         # State
         self.state_e = self.exc.init_state()
         self.state_i = self.inh.init_state()
         self.z_i_prev = None
-        self.theta = torch.full((cfg.n_e,), cfg.theta_init)
+        self.theta = torch.full((cfg.n_e,), cfg.theta_init, device=self.device)
         self.theta_batch = None
         self.n_presentations = 0
 
@@ -118,10 +119,10 @@ class CompetitiveNetwork:
         cfg_delay = float(cfg.delay_max_in_ms)
         if cfg_delay > 0:
             D = max(1, int(round(cfg_delay / cfg.dt_ms)))
-            self.delay_steps = torch.randint(0, D + 1, (cfg.n_e,), generator=self.generator).to(torch.long)
+            self.delay_steps = torch.randint(0, D + 1, (cfg.n_e,), generator=self.generator, device=self.device).to(torch.long)
             self._delay_D = D
         else:
-            self.delay_steps = torch.zeros(cfg.n_e, dtype=torch.long)
+            self.delay_steps = torch.zeros(cfg.n_e, device=self.device, dtype=torch.long)
             self._delay_D = 0
 
         # STDP state (3-trace)
@@ -270,6 +271,31 @@ class CompetitiveNetwork:
         if not record_history:
             z_e_hist = torch.empty(0)
         return z_e_hist, counts
+
+    # ------------------------------------------------------------------
+    # Generative: generate & reconstruct images (tanpa backprop)
+    # ------------------------------------------------------------------
+    def generate(self, neuron_idx: int):
+        return self.w_e[:, neuron_idx].reshape(28, 28)
+
+    def generate_samples(self, n: int = 10, seed: int = 0):
+        g = torch.Generator(device=self.device).manual_seed(seed)
+        n_e = self.w_e.shape[1]
+        idx = torch.randperm(n_e, generator=g, device=self.device)[:n]
+        return torch.stack([self.generate(int(i)) for i in idx])
+
+    def generate_class(self, assignments, class_idx: int, seed: int = 0):
+        g = torch.Generator(device=self.device).manual_seed(seed)
+        candidates = (assignments == class_idx).nonzero(as_tuple=True)[0]
+        if candidates.numel() == 0:
+            raise ValueError(f"tidak ada neuron untuk kelas {class_idx}")
+        j = candidates[torch.randint(0, candidates.numel(), (1,), generator=g).item()]
+        return self.generate(int(j))
+
+    def reconstruct(self, counts):
+        counts = counts.to(self.device)
+        rec = (counts.to(torch.float64) @ self.w_e.T.to(torch.float64))
+        return rec.reshape(-1, 28, 28).to(torch.float32)
 
     def state_dict(self):
         return {
