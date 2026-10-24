@@ -180,6 +180,14 @@ def present_adaptive(
     if n == 0:
         return total, intensity
 
+    # Pre-alokasi buffer spike (steps, batch, n_in) sekali, dipakai
+    # ulang tiap retry. Menghindari alokasi 280 MB per presentasi
+    # yang menyebabkan GC pause dan speed drop (56 -> 18 pres/s).
+    max_batch = n
+    buf = torch.empty(
+        (enc.n_steps, max_batch, int(net.config.n_in)), dtype=torch.float32
+    )
+
     pending = torch.arange(n)
     for rep in range(max_repeat + 1):
         if pending.numel() == 0:
@@ -187,8 +195,10 @@ def present_adaptive(
         ctrl = AdaptiveIntensity(enc)
         for _ in range(rep):
             ctrl.escalate()
+        # selalu encode subset pending, tulis ke slice buffer
+        sub_buf = buf[:, : pending.numel(), :]
         spikes = encode_poisson(
-            images[pending], ctrl.intensity, enc, generator=gen
+            images[pending], ctrl.intensity, enc, generator=gen, out=sub_buf
         )
         _, counts = net.present_batch(spikes, learn=learn)
         total[pending] += counts

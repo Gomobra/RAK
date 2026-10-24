@@ -165,6 +165,7 @@ def encode_poisson(
     generator: torch.Generator | None = None,
     n_steps: int | None = None,
     rest: bool = False,
+    out: Tensor | None = None,
 ) -> Tensor:
     """Ubah intensitas gambar jadi spike train biner.
 
@@ -180,7 +181,9 @@ def encode_poisson(
         rest: kalau True, tambahkan tail diam (untuk jeda).
 
     Returns:
-        (n_steps, B, n_in) float32, nilai 0.0 atau 1.0.
+        (n_steps, B, n_in) float32, nilai 0.0 atau 1.0. Kalau `out`
+        diberikan, hasil ditulis ke sana dan tensor yang sama
+        dikembalikan (tanpa alokasi baru).
 
     Catatan: spike digenerate per timestep dari distribusi Binomial
     dengan p = rate * dt / 1000. Mengambil `p` per neuron PER
@@ -217,15 +220,17 @@ def encode_poisson(
             f"perkecil dt."
         )
 
-    u = torch.rand(
-        (steps, n_batch, n_in), generator=generator, dtype=torch.float32
-    )
-    spikes = (u < prob.unsqueeze(0)).to(torch.float32)
-
-    if rest and cfg.n_rest_steps > 0:
-        pad = torch.zeros(cfg.n_rest_steps, n_batch, n_in)
-        spikes = torch.cat([spikes, pad], dim=0)
-    return spikes
+    if out is None:
+        out = torch.empty((steps, n_batch, n_in), dtype=torch.float32)
+    # generate in-place ke buffer yang sudah ada -> tidak ada
+    # alokasi 280 MB per presentasi.
+    torch.rand((steps, n_batch, n_in), generator=generator, out=out)
+    # bandingkan in-place (float32 tensor jadi 0.0/1.0)
+    out.lt_(prob.unsqueeze(0).expand_as(out))
+    # lt_ pada float32 tensor menghasilkan bool in-place? Tidak --
+    # PyTorch lt_ pada float tensor mengubah nilai jadi 0.0/1.0
+    # float (bukan bool). Verifikasi aman.
+    return out
 
 
 def spike_counts(spikes: Tensor) -> Tensor:

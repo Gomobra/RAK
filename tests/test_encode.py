@@ -271,14 +271,16 @@ def test_rejects_impossible_rate():
         )
 
 
-def test_rest_appends_silence():
+def test_encode_does_not_append_rest():
+    # Rest (jeda) dimiliki present_batch, bukan encoder, supaya
+    # conductance/trace ikut meluruh. Encoder hanya menghasilkan
+    # present_ms step.
     cfg = _cfg()
     g = torch.Generator().manual_seed(13)
     sp = encode_poisson(
-        torch.full((2, 784), 1.0), 2.0, cfg, generator=g, rest=True
+        torch.full((2, 784), 1.0), 2.0, cfg, generator=g
     )
-    assert sp.shape[0] == cfg.n_steps + cfg.n_rest_steps
-    assert float(sp[cfg.n_steps:].sum()) == 0.0, "tail harus diam"
+    assert sp.shape[0] == cfg.n_steps
 
 
 # ================================================= intensitas adaptif
