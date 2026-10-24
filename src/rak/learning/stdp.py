@@ -68,7 +68,6 @@ __all__ = [
     "STDPConfig",
     "ALGORITHMS",
     "stdp_step",
-    "stdp_step_linear_layers",
     "stdp_window",
     "make_trace",
     "A_plus",
@@ -252,24 +251,6 @@ def stdp_step(
     trace_post_new = tq_dec + z_post
 
     return w_new, trace_pre_new, trace_post_new
-
-
-def stdp_step_linear_layers(
-    z_pre: Tensor,
-    z_post: Tensor,
-    w: Tensor,
-    trace_pre: Tensor,
-    trace_post: Tensor,
-    cfg: STDPConfig,
-) -> tuple[Tensor, Tensor, Tensor]:
-    """Alias eksplisit untuk STDP pada lapisan feedforward.
-
-        STDP untuk lapisan linear (Norse `stdp_step_linear`). Stateless
-        aside dari trace — jadi nama ini hanya untuk kejelasan saat dipakai
-        di dalam loop SpikeLayer.
-    """
-    return stdp_step(z_pre, z_post, w, trace_pre, trace_post, cfg)
-
 
 # ----------------------------------------------------------------------
 # Window analitik (untuk verifikasi + plot)

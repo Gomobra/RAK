@@ -302,7 +302,7 @@ def _cmd_viz_phase2(args: argparse.Namespace) -> int:
         incoming_drive,
         soft_normalize,
     )
-    from rak.learning.stdp import STDPConfig, make_trace, stdp_step, stdp_window
+    from rak.learning.stdp import STDPConfig, make_trace, stdp_step
     from rak.neuron.viz import (
         plot_column_normalization,
         plot_drive_history,

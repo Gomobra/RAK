@@ -53,11 +53,9 @@ src/rak/
   neuron/       LIF, Adaptive LIF, Izhikevich, SpikeLayer, spike trace
   homeostasis/  adaptive threshold, synaptic scaling, lateral inhibition  (Phase 2)
   learning/     Hebbian, STDP, R-STDP, e-prop, predictive coding          (Phase 2+)
-  architecture/ sparse, modular, reservoir, recurrent, attention          (Phase 4)
-  memory/       Hopfield, SDM, episodic buffer, immutable store           (Phase 5)
-  inference/    event-driven, sparse activation, temporal coding         (Phase 7)
-  readout/      ridge linear + ensemble fitur spike count                  (Phase 3)
-  tasks/        MNIST, Omniglot, associative memory                       (Phase 3+)
+  data/         MNIST loader, Poisson encoder, adaptive intensity
+  network/      CompetitiveNetwork, STDP, conductance LIF (Phase 3)
+  readout/      Ridge readout + ensemble fitur spike count (Phase 3)
   eval/         seeds, benchmark, energy, explainability, ablation       (Phase 7)
 ```
 

@@ -21,7 +21,7 @@ from rak.network.competitive import (
     class_prototypes,
     classify_matched,
 )
-from rak.readout.features import ensemble_counts
+from rak.readout.features import collect_counts, ensemble_counts
 from rak.readout.linear import RidgeReadout
 
 __all__ = ["main", "load_net"]

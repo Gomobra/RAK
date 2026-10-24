@@ -24,7 +24,6 @@ from rak.learning.stdp import (
     A_plus,
     make_trace,
     stdp_step,
-    stdp_step_linear_layers,
     stdp_window,
 )
 
@@ -48,6 +47,5 @@ __all__ = [
     "make_trace",
     "oja_update",
     "stdp_step",
-    "stdp_step_linear_layers",
     "stdp_window",
 ]

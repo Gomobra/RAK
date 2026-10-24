@@ -43,12 +43,11 @@ import torch
 from torch import Tensor
 
 from rak.homeostasis.scaling import ScalingConfig, hard_normalize
-from rak.learning.stdp3 import Eq3Config, Eq3State, eq3_step, make_eq3_state
+from rak.learning.stdp3 import Eq3Config, Eq3State, make_eq3_state
 from rak.learning.stdp_variant3 import (
     Variant3Config,
     Variant3State,
     make_variant3_state,
-    variant3_step,
 )
 from rak.neuron.conductance import (
     ConductanceConfig,
@@ -482,27 +481,6 @@ class CompetitiveNetwork:
             buf_zp = torch.zeros(L, batch, cfg.n_in, device=self.device, dtype=z_pre.dtype)
             buf_pre = torch.zeros(L, batch, cfg.n_in, device=self.device, dtype=torch.float32)
 
-        def _step(zp, z_e, learn_flag):
-            nonlocal pre_trace, post1, post2
-            if D > 0:
-                # zp_delayed & pre_delayed dibangun oleh pemanggil
-                pass
-            # conductance drive ditangani di luar; fungsi ini hanya STDP
-            if not learn_flag:
-                return
-            # decay post traces
-            post1_d = gamma_post1 * post1
-            post2_d = gamma_post2 * post2
-            fired = (z_e > 0)
-            if self.rule != "variant3":
-                # eq3 path tidak didukung dengan delay; fallback ke variant3
-                pass
-            # LTP/LTD dengan delay (zp_delayed, pre_delayed) atau
-            # tanpa delay (zp, pre_trace decayed)
-            if D > 0:
-                # pemanggil harus menyediakan zp_d, pre_d_delayed
-                pass
-
         # --- loop presentasi ---
         for t in range(n_steps):
             zp = z_pre[t]  # (B, n_in)
@@ -512,8 +490,6 @@ class CompetitiveNetwork:
                 pre_d_cur = gamma_pre * pre_trace  # (B, n_in)
                 buf_pre[t % L] = pre_d_cur
                 idx = (t - self.delay_steps) % L  # (n_e,)
-                zp_d = buf_zp[idx].permute(1, 0, 2)  # (B, n_e, n_in)
-                pre_d_delayed = buf_pre[idx].permute(1, 0, 2)  # (B, n_e, n_in)
                 zp_d = buf_zp[idx].permute(1, 0, 2)  # (B, n_e, n_in)
                 pre_d_delayed = buf_pre[idx].permute(1, 0, 2)  # (B, n_e, n_in)
                 # Per-delay-group dense matmul: neuron dengan delay yang
@@ -656,9 +632,7 @@ class CompetitiveNetwork:
         scale = ScalingConfig(target_sum=cfg.column_sum,
                               soft_power=cfg.soft_power)
         if learn:
-            self.w_e = hard_normalize(
-                hard_normalize(self.w_e, scale), scale
-            )
+            self.w_e = hard_normalize(self.w_e, scale)
 
         self.n_presentations += 1
         if not record_history:

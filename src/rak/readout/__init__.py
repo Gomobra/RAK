@@ -8,7 +8,7 @@ menjadi kelas, dilatih di data TRAIN, dipilih di validasi TRAIN.
     pred = readout.predict(x_test)
 """
 
-from rak.readout.features import ensemble_counts, spike_counts
+from rak.readout.features import collect_counts, ensemble_counts
 from rak.readout.linear import RidgeReadout, Standardizer
 
-__all__ = ["RidgeReadout", "Standardizer", "spike_counts", "ensemble_counts"]
+__all__ = ["RidgeReadout", "Standardizer", "collect_counts", "ensemble_counts"]

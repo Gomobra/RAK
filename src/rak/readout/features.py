@@ -9,10 +9,10 @@ from rak.data.encode import EncoderConfig
 from rak.network.competitive import CompetitiveNetwork
 from rak.network.train import present_adaptive
 
-__all__ = ["spike_counts", "ensemble_counts"]
+__all__ = ["collect_counts", "ensemble_counts"]
 
 
-def spike_counts(
+def collect_counts(
     net: CompetitiveNetwork,
     images: Tensor,
     *,
@@ -58,7 +58,7 @@ def ensemble_counts(
     if not nets:
         raise ValueError("ensemble butuh minimal satu model")
     parts = [
-        spike_counts(
+        collect_counts(
             net, images, trials=trials, batch=batch, seed=seed + i, enc=enc
         )
         for i, net in enumerate(nets)
