@@ -30,6 +30,8 @@ def main():
     p.add_argument("--assign", type=int, default=5000)
     p.add_argument("--test", type=int, default=0)
     p.add_argument("--trials", type=int, default=5)
+    p.add_argument("--assign-samples", type=int, default=5000)
+    p.add_argument("--test-limit", type=int, default=0)
     p.add_argument("--out-dir", default="runs/mnist")
     args = p.parse_args()
 
@@ -55,7 +57,7 @@ def main():
     net = train(train_data, cfg)
 
     # Assign classes
-    n_assign = min(args.assign, len(train_data.images))
+    n_assign = min(args.assign_samples, len(train_data.images))
     enc = __import__("rak.data.encode", fromlist=["EncoderConfig"]).EncoderConfig(rest_ms=args.rest_ms)
     gen = torch.Generator().manual_seed(args.seed + 1)
     from rak.data.encode import present_adaptive as pa
@@ -68,7 +70,7 @@ def main():
     assignments = assign_classes(counts, train_data.labels[:counts.shape[0]])
 
     # Evaluate
-    n_test = len(test_data.images) if args.test == 0 else min(args.test, len(test_data.images))
+    n_test = len(test_data.images) if args.test_limit == 0 else min(args.test_limit, len(test_data.images))
     test_counts = torch.zeros(n_test, args.neurons)
     for s in range(0, n_test, args.batch):
         e = min(s + args.batch, n_test)
