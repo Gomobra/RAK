@@ -85,6 +85,7 @@ jobs:
             --delay-max ${{ github.event.inputs.delay_max || '0' }} \
             --rest-ms ${{ github.event.inputs.rest_ms || '0' }} \
             ${{ github.event.inputs.legacy_params == 'true' && '--legacy-params' || '' }} \
+            --limit ${{ github.event.inputs.smoke == 'true' && '1000' || (github.event.inputs.limit || '0') }} \
             --assign-samples ${{ github.event.inputs.assign || '5000' }} \
             --test-limit ${{ github.event.inputs.test || '0' }} \
             --trials ${{ github.event.inputs.trials || '1' }} \

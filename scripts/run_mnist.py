@@ -9,7 +9,7 @@ from pathlib import Path
 import torch
 
 from rak.data.encode import EncoderConfig, present_adaptive
-from rak.data.mnist import load_mnist
+from rak.data.mnist import MnistSplit, load_mnist
 from rak.network.competitive import CompetitiveNetwork, NetworkConfig
 from rak.network.train import TrainConfig, accuracy, evaluate, train
 
@@ -18,6 +18,8 @@ def main():
     p = argparse.ArgumentParser()
     p.add_argument("--neurons", type=int, default=400)
     p.add_argument("--epochs", type=int, default=1)
+    p.add_argument("--limit", type=int, default=0,
+                   help="batas presentasi (0 = penuh)")
     p.add_argument("--seed", type=int, default=1)
     p.add_argument("--inhibition", type=float, default=17.0)
     p.add_argument("--e-to-i", type=float, default=10.4)
@@ -37,6 +39,9 @@ def main():
 
     use_ref = not args.legacy_params
     train_data = load_mnist("train")
+    if args.limit and args.limit > 0:
+        train_data = MnistSplit(images=train_data.images[:args.limit],
+                                labels=train_data.labels[:args.limit])
     test_data = load_mnist("test")
 
     cfg = TrainConfig(
