@@ -19,6 +19,10 @@ on:
         description: "I->E weight per synapse (acuan 17)"
         required: false
         default: "17"
+      e_to_i:
+        description: "E->I weight (acuan 10.4)"
+        required: false
+        default: "10.4"
       theta_plus:
         description: "theta_plus (acuan 0.05)"
         required: false
@@ -80,6 +84,7 @@ jobs:
             --epochs ${{ github.event.inputs.epochs || '1' }} \
             --seed ${{ github.event.inputs.seed || '1' }} \
             --inhibition ${{ github.event.inputs.inhibition || '17' }} \
+            --e-to-i ${{ github.event.inputs.e_to_i || '10.4' }} \
             --theta-plus ${{ github.event.inputs.theta_plus || '0.05' }} \
             --theta-max ${{ github.event.inputs.theta_max || '200' }} \
             --delay-max ${{ github.event.inputs.delay_max || '0' }} \
