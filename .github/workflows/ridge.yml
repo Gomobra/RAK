@@ -50,6 +50,10 @@ on:
         description: "rest_ms saat training"
         required: false
         default: "0"
+      legacy_params:
+        description: "Pakai parameter lama (sparse inhibisi)"
+        required: false
+        default: "false"
 
 jobs:
   ridge:
@@ -119,6 +123,7 @@ jobs:
             --inhibition ${{ github.event.inputs.inhibition }} \
             --e-to-i ${{ github.event.inputs.e_to_i || '1600' }} \
             --rest-ms ${{ github.event.inputs.rest_ms || '0' }} \
+            ${{ github.event.inputs.legacy_params == 'true' && '--legacy-params' || '' }} \
             --out runs/ridge/ridge.json | tee runs/ridge/ridge.txt
 
       - name: Ringkasan

@@ -67,6 +67,10 @@ on:
         description: "Jeda zero-input setelah presentasi (ms), acuan 150"
         required: false
         default: "0"
+      legacy_params:
+        description: "Pakai parameter lama (sparse inhibisi, init lama)"
+        required: false
+        default: "false"
       reassign:
         description: "Dengan resume_run: hitung ulang assignment (STDP mati), jangan pakai yang tersimpan"
         type: boolean
@@ -174,6 +178,7 @@ jobs:
             --e-to-i ${{ github.event.inputs.e_to_i || '1600' }} \
             --delay-max ${{ github.event.inputs.delay_max || '0' }} \
             --rest-ms ${{ github.event.inputs.rest_ms || '0' }} \
+            ${{ github.event.inputs.legacy_params == 'true' && '--legacy-params' || '' }} \
             --rule ${{ github.event.inputs.rule || 'variant3' }} \
             --assign-samples ${{ github.event.inputs.assign || '0' }} \
             --test-limit ${{ github.event.inputs.test || '0' }} \

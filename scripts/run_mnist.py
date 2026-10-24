@@ -248,6 +248,7 @@ def run(args: argparse.Namespace) -> int:
                 e_to_i_strength=args.e_to_i,
                 delay_max_in_ms=args.delay_max,
                 rest_ms=args.rest_ms,
+                use_reference_params=not args.legacy_params,
             ),
             stdp_config=Eq3Config(eta=args.eta),
             seed=args.seed,
@@ -272,6 +273,7 @@ def run(args: argparse.Namespace) -> int:
                 e_to_i_strength=args.e_to_i,
                 delay_max_in_ms=args.delay_max,
                 rest_ms=args.rest_ms,
+                use_reference_params=not args.legacy_params,
                 out_dir=str(out_dir),
                 log_every=args.log_every,
                 checkpoint_every=args.checkpoint_every,
@@ -464,6 +466,8 @@ def build_parser() -> argparse.ArgumentParser:
                    help="delay input->E maksimum (ms), acuan 10")
     p.add_argument("--rest-ms", type=float, default=0.0,
                    help="jeda zero-input setelah presentasi (ms), acuan 150")
+    p.add_argument("--legacy-params", action="store_true",
+                   help="pakai parameter lama (sparse inhibisi, init lama)")
     p.add_argument("--reassign", action="store_true",
                    help="dengan --resume: abaikan assignments tersimpan, "
                         "hitung ulang dari data train")

@@ -90,6 +90,9 @@ class TrainConfig:
     #: Jeda zero-input setelah presentasi (ms). Acuan: 150.
     rest_ms: float = 0.0
 
+    #: Pakai parameter persis acuan (weight init, inhibisi all-to-all).
+    use_reference_params: bool = True
+
     #: Learning rate STDP Eq.3.
     eta: float = 1e-3
 
@@ -236,6 +239,7 @@ def train(
                 e_to_i_strength=cfg.e_to_i_strength,
                 delay_max_in_ms=cfg.delay_max_in_ms,
                 rest_ms=cfg.rest_ms,
+                use_reference_params=cfg.use_reference_params,
             ),
             stdp_config=Eq3Config(eta=cfg.eta, dt_ms=enc.dt_ms),
             seed=cfg.seed,

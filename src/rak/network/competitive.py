@@ -159,6 +159,13 @@ class NetworkConfig:
     #: satu nilai `n_e`.
     scale_inhibition: bool = True
 
+    #: Pakai parameter persis acuan Diehl & Cook 2015 (Brian2
+    #: reproduction): weight init uniform [0.003, 0.303], E->I 10.4
+    #: (one-to-one), I->E all-to-all 17.0, theta_plus 0.05.
+    #: Kalau False, pakai parameter tunable (inhibition_strength,
+    #: e_to_i_strength, inhib_connectivity, scale_inhibition).
+    use_reference_params: bool = True
+
     #: Synaptic delay input -> E, uniform [0, delay_max_in_ms] ms per
     #: neuron. 0 = mati (backward compatible). Acuan: 0-10 ms per
     #: sinaps; versi kita per-neuron (satu delay per neuron, bukan
@@ -238,6 +245,7 @@ class CompetitiveNetwork:
                 v_th=-52.0,
                 v_reset=-65.0,
                 refrac_ms=5.0,
+                spike_refrac_ms=(50.0 if cfg.use_reference_params else 5.0),
                 dt_ms=cfg.dt_ms,
             ),
         ).to(self.device)
@@ -265,62 +273,51 @@ class CompetitiveNetwork:
         ).to(self.device)
 
         # --- bobot ------------------------------------------------------
-        scale = cfg.column_sum / cfg.n_in
-        self.w_e = (
-            torch.rand(cfg.n_in, cfg.n_e, generator=self.generator,
-                       device=self.device) * scale + 0.5 * scale
-        )
-        # E -> I satu-satu (identitas), I -> E all-to-all negatif.
-        self.w_ei = (
-            torch.eye(cfg.n_e, cfg.n_inhibitory, device=self.device)
-            * cfg.e_to_i_strength
-        )
-        # I -> E: besar KONDAKTANSI positif. Arah inhibisi datang
-        # dari `e_syn_i = -100 mV` yang lebih rendah dari v_rest, BUKAN
-        # dari bobot negatif.
-        #
-        # Menyalakan bobot negatif di sini akan menghijau inhibitory
-        # DUA KALI: `gi` negatif kali `E_i` negatif jadi POSITIF,
-        # sehingga inhibisi berubah jadi depolarisasi. Symptom-nya
-        # halus dan sangat menyesatkan: neuron yang di-inhibisi
-        # justru lebih mudah fire.
-        # I -> E diskalakan `1/n_e` supaya TOTAL inhibisi per neuron
-        # eksitasi KONSTAN terlepas dari ukuran jaringan.
-        #
-        # Tanpa ini, total inhibisi = strength x (jumlah inhibitor yang
-        # fire), yang ikut tumbuh bersama n_e. Sweep 100 neuron
-        # membuktikan konsekuensinya: ambang yang memecah simetri
-        # bernilai 4 di n_e=40 tapi 8 di n_e=100. Nilai yang sama
-        # menghasilkan jaringan BERBEDA hanya karena ukuran -- itu
-        # tidak bisa dipakai sebagai parameter yang dilaporkan.
-        #
-        # Ini persis `scale_per_neuron` yang sudah ada di
-        # `rak.homeostasis.inhibition` (Phase 2B) tapi tidak dibawa ke
-        # sini. Inkonsistensi yang sama pays off dua kali.
-        # I -> E: konektivitas ACAK, dinormalisasi per kolom.
-        #
-        # Kolom = neuron eksitasi. Jumlah bobot yang diterimanya
-        # dibuat tepat `inhibition_strength`, jadi total inhibisi
-        # konstan terhadap ukuran jaringan DAN terhadap berapa banyak
-        # neuron inhibitor yang menyala (dalam ekspektasi).
-        #
-        # Versi lama: all-to-all seragam. Secara total sama, tapi
-        # secara struktur setiap neuron E menerima inhibisi yang
-        # identik -- kompetisi jadi simetris sempurna.
-        mask = (
-            torch.rand(
-                cfg.n_inhibitory, cfg.n_e,
-                generator=self.generator, device=self.device,
-            ) < cfg.inhib_connectivity
-        ).to(torch.float32)
-        # Jangan biarkan ada kolom kosong (neuron tanpa inhibisi sama
-        # sekali akan menang selamanya).
-        empty = mask.sum(dim=0) == 0
-        if bool(empty.any()):
-            idx = torch.nonzero(empty).flatten()
-            mask[idx, idx % cfg.n_inhibitory] = 1.0
-        col = mask.sum(dim=0).clamp_min(1.0)
-        self.w_ie = mask * (cfg.inhibition_strength / col).unsqueeze(0)
+        if cfg.use_reference_params:
+            # Acuan: (rand + 0.01) * 0.3  -> uniform [0.003, 0.303]
+            self.w_e = (
+                (torch.rand(cfg.n_in, cfg.n_e, generator=self.generator,
+                            device=self.device) + 0.01) * 0.3
+            )
+        else:
+            scale = cfg.column_sum / cfg.n_in
+            self.w_e = (
+                torch.rand(cfg.n_in, cfg.n_e, generator=self.generator,
+                           device=self.device) * scale + 0.5 * scale
+            )
+        if cfg.use_reference_params:
+            # Acuan: E->I one-to-one weight 10.4.
+            self.w_ei = (
+                torch.eye(cfg.n_e, cfg.n_inhibitory, device=self.device)
+                * 10.4
+            )
+            # Acuan: I->E all-to-all (i != j) weight 17.0. TIDAK
+            # dinormalisasi per kolom -- setiap neuron E menerima
+            # inhibisi identik dari semua inhibitor kecuali dirinya.
+            # Simetri dipecah oleh noise weight init + STDP + delay.
+            self.w_ie = 17.0 * (
+                torch.ones(cfg.n_inhibitory, cfg.n_e, device=self.device)
+                - torch.eye(cfg.n_inhibitory, cfg.n_e, device=self.device)
+            )
+        else:
+            # E -> I satu-satu (identitas)
+            self.w_ei = (
+                torch.eye(cfg.n_e, cfg.n_inhibitory, device=self.device)
+                * cfg.e_to_i_strength
+            )
+            # I -> E: konektivitas ACAK, dinormalisasi per kolom.
+            mask = (
+                torch.rand(
+                    cfg.n_inhibitory, cfg.n_e,
+                    generator=self.generator, device=self.device,
+                ) < cfg.inhib_connectivity
+            ).to(torch.float32)
+            empty = mask.sum(dim=0) == 0
+            if bool(empty.any()):
+                idx = torch.nonzero(empty).flatten()
+                mask[idx, idx % cfg.n_inhibitory] = 1.0
+            col = mask.sum(dim=0).clamp_min(1.0)
+            self.w_ie = mask * (cfg.inhibition_strength / col).unsqueeze(0)
 
         # --- synaptic delay per neuron (opsional) -----------------------
         cfg_delay = float(cfg.delay_max_in_ms)

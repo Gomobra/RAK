@@ -88,7 +88,11 @@ class ConductanceConfig:
 
     v_th: float = -52.0
     v_reset: float = -65.0
+    #: Membran di-clamp ke v_reset selama ini (ms).
     refrac_ms: float = 5.0
+    #: Spike dicegah selama ini (ms). Acuan Diehl-Cook: clamp 5 ms
+    #: tapi spike dicegah 50 ms. Default = refrac_ms (perilaku lama).
+    spike_refrac_ms: float | None = None
     dt_ms: float = 0.5
 
     #: Berapa banyak conductance ditambahkan per spike presinaptik.
@@ -111,6 +115,10 @@ class ConductanceConfig:
             )
         if self.refrac_ms < 0:
             raise ValueError(f"refrac_ms harus >= 0, dapat {self.refrac_ms}")
+        sr = self.refrac_ms if self.spike_refrac_ms is None else self.spike_refrac_ms
+        if sr < 0:
+            raise ValueError(f"spike_refrac_ms harus >= 0, dapat {sr}")
+        object.__setattr__(self, "spike_refrac_ms", float(sr))
 
         object.__setattr__(self, "gamma_ge", _exp(-self.dt_ms / self.tau_ge_ms))
         object.__setattr__(self, "gamma_gi", _exp(-self.dt_ms / self.tau_gi_ms))
@@ -276,7 +284,7 @@ class ConductanceLIF(nn.Module):
         spikes = (v_new >= threshold).to(torch.float32)
         if timer is not None:
             spikes = torch.where(
-                timer >= cfg.refrac_ms, spikes, torch.zeros_like(spikes)
+                timer >= cfg.spike_refrac_ms, spikes, torch.zeros_like(spikes)
             )
 
         v_new = torch.where(spikes > 0, self.v_reset.expand_as(v_new), v_new)
