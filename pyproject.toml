@@ -1,0 +1,17 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel", "pybind11>=2.10"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "rak"
+version = "0.1.0"
+description = "RAK (Recurrent Adaptive Knowledge) — engine AI mandiri, Python + C++"
+requires-python = ">=3.8"
+readme = "README.md"
+
+[project.optional-dependencies]
+dev = ["pytest", "numpy"]
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+packages = ["rak"]
