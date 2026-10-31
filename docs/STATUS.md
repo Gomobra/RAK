@@ -11,7 +11,7 @@ Wajib diperbarui setiap modul berubah. Status naik ke ASLI hanya dengan bukti (t
 | cuda | L7 | F0.5 | BELUM DIMULAI | | Kernel CUDA, paritas CPU vs CUDA | |
 | bindings Python | L7 | F0.7 | ASLI | _rak.so build dan impor dari Python; buffer protocol, binding op & optimizer; uji paritas Python vs C++ di tests/parity/ | editable install di Termux | 2026-10-31 / T0.7.x |
 | data pipeline | L8 | F1.1 | BELUM DIMULAI | | | |
-| baseline (Transformer, hybrid) | L1 | F1.2 | BELUM DIMULAI | | | |
+| baseline (Transformer, hybrid) | L1 | F1.2 | KERANGKA | ADR 0009 (spesifikasi arsitektur + estimasi parameter 10M/30M) | Implementasi model C++, test, training pipeline | 2026-10-31 / T1.2.x | |
 | eval harness | L11 | F1.3 | BELUM DIMULAI | | | |
 | encoders/bytepatch, bpe | L0 | F2.1 | BELUM DIMULAI | | | |
 | cortex (blok dasar) | L1 | F2.2 | BELUM DIMULAI | | | |

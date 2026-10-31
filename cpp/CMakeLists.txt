@@ -101,6 +101,10 @@ set(RAK_CORE_SOURCES
   src/train/optimizer.cpp
   src/train/checkpoint.cpp
   src/testing/grad_check.cpp
+  src/data/shard_reader.cpp
+  src/data/streaming_sampler.cpp
+  src/models/transformer.cpp
+  src/models/hybrid.cpp
 )
 
 # Sumber CUDA (hanya jika RAK_CUDA=ON).

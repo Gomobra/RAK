@@ -19,3 +19,6 @@ experiments/runs/
 .DS_Store
 .vscode/
 .idea/
+.claude
+AGENTS.md
+PRD.md
